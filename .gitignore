@@ -1,0 +1,33 @@
+# OS
+.DS_Store
+
+# Rust build artifacts
+/target/
+/debug/
+/release/
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Logs
+logs/
+*.log
+
+# Database / data directories
+mydatabase.db/
+data/
+tmp/
+
+# Misc
+*.rs.bk
+cargo-timing*.json
+coverage/
+*.profraw
