@@ -3,7 +3,18 @@
 //! This module provides a `Database` struct that wraps a SurrealDB client and
 //! handles connection setup, authentication, and namespace/database selection.
 //! It reads configuration from environment variables with sensible defaults.
+//!
+//! Notes:
+//! - Uses parameterized queries to avoid injection.
+//! - User IDs are SurrealDB Things in the form `user:<uuid-v4>`.
+//! - Inherent helper `find_user_by_email` returns only users with a password set
+//!   (filters legacy rows) via `AND password != NONE LIMIT 1`.
+//!
+//! Env:
+//! - SURREALDB_HOST (ws endpoint), SURREALDB_USER, SURREALDB_PASS,
+//!   SURREALDB_NAMESPACE, SURREALDB_DATABASE.
 
+use crate::models::entities::user::User;
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Error, Surreal};
@@ -24,11 +35,12 @@ pub struct Database {
 }
 
 impl Database {
-    /// Initializes a new database connection with the following steps:
-    /// 1. Connects to the SurrealDB server using `SURREALDB_HOST` (default: 127.0.0.1:8002)
-    /// 2. Authenticates using `SURREALDB_USER`/`SURREALDB_PASS` (default: root/root)
-    /// 3. Selects namespace/database from `SURREALDB_NAMESPACE`/`SURREALDB_DATABASE`
-    ///    (default: "surreal"/"task")
+    /// Initializes a new database connection using env vars:
+    /// - SURREALDB_HOST (default: 127.0.0.1:8002)
+    /// - SURREALDB_USER/SURREALDB_PASS (default: root/root)
+    /// - SURREALDB_NAMESPACE/SURREALDB_DATABASE (default: surreal/task)
+    ///
+    /// Returns an authenticated client with ns/db selected.
     ///
     /// # Errors
     /// Returns `Err` if any step fails (connection, authentication, or selection).
@@ -63,5 +75,25 @@ impl Database {
             namespace,
             db_name,
         })
+    }
+
+    /// Find a user by email (filters legacy rows without password).
+    ///
+    /// Query:
+    /// SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1
+    ///
+    /// Returns:
+    /// - Some(User) when found and deserialized, None otherwise.
+    pub async fn find_user_by_email(&self, email: &str) -> Option<User> {
+        let sql = "SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1";
+        match self
+            .client
+            .query(sql)
+            .bind(("email", email))
+            .await
+        {
+            Ok(mut resp) => resp.take::<Option<User>>(0).ok().flatten(),
+            Err(_) => None,
+        }
     }
 }

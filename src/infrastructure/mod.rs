@@ -9,8 +9,8 @@
 //! - `logging`: System-wide logging facilities
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::infrastructure::{database, auth, logging};
+//! ```rust,ignore
+//! use actix_crud::infrastructure::{database, auth, logging};
 //! ```
 //!
 //! The infrastructure layer is designed to:

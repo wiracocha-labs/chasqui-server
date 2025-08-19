@@ -6,9 +6,10 @@
 //! # Module Structure
 //! - `services`: Contains core business logic and use case implementations
 //!
-//! # Usage
-//! ```rust
-//! use chasqui_server::application::services;
+//! # Ejemplo
+//! ```rust,ignore
+//! use actix_crud::application::services;
+//! // ...example usage...
 //! ```
 //!
 //! The application layer is designed to:

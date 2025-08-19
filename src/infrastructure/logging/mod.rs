@@ -8,8 +8,8 @@
 //!   and other logging interceptors
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::infrastructure::logging;
+//! ```rust,ignore
+//! use actix_crud::infrastructure::logging;
 //! ```
 //!
 //! The logging infrastructure is designed to:

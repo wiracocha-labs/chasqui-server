@@ -8,8 +8,8 @@
 //! - `user_data_trait`: Trait definitions for user-related behaviors
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::models::traits::{task_data_trait, user_data_trait};
+//! ```rust,ignore
+//! use actix_crud::models::traits::{task_data_trait, user_data_trait};
 //! ```
 //!
 //! The traits module is designed to:

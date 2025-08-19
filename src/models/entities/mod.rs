@@ -8,8 +8,8 @@
 //! - `user`: User entity definitions and related types
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::models::entities::{task, user};
+//! ```rust,ignore
+//! use actix_crud::models::entities::{task, user};
 //! ```
 //!
 //! The entities module is designed to:

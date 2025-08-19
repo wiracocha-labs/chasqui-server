@@ -7,8 +7,8 @@
 //! - `task_error`: Task-related error definitions
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::error::TaskError;
+//! ```rust,ignore
+//! use actix_crud::error::TaskError;
 //! ```
 //!
 //! The error module is designed to:

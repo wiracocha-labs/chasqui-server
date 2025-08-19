@@ -9,8 +9,8 @@
 //! - `webhook`: Webhook configuration and storage (pending implementation)
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::interfaces::repositories;
+//! ```rust,ignore
+//! use actix_crud::interfaces::repositories;
 //! ```
 //!
 //! The repositories module is designed to:

@@ -8,9 +8,9 @@
 //! - `traits`: Core behavior definitions
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::models::{Task, User};
-//! use chasqui_server::models::traits::TaskDataTrait;
+//! ```rust,ignore
+//! use actix_crud::models::{Task, User};
+//! use actix_crud::models::traits::TaskDataTrait;
 //! ```
 //!
 //! The models module is designed to:

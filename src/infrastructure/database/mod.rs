@@ -7,8 +7,8 @@
 //! - `surrealdb`: SurrealDB implementation and connection management
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::infrastructure::database::surrealdb::Database;
+//! ```rust,ignore
+//! use actix_crud::infrastructure::database::surrealdb::Database;
 //! ```
 //!
 //! The database infrastructure is designed to:

@@ -8,8 +8,8 @@
 //! - `repositories`: Data access interfaces and concrete implementations
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::interfaces::{api, repositories};
+//! ```rust,ignore
+//! use actix_crud::interfaces::{api, repositories};
 //! ```
 //!
 //! The interfaces layer is designed to:

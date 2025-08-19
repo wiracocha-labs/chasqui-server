@@ -9,8 +9,8 @@
 //! - `user_handlers`: User-related request handlers
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::interfaces::api::{routes, task_handlers, user_handlers};
+//! ```rust,ignore
+//! use actix_crud::interfaces::api::{routes, task_handlers, user_handlers};
 //! ```
 //!
 //! The API module is designed to:

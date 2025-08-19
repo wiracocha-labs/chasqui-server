@@ -7,8 +7,8 @@
 //! - `data_trait_executor`: Implementation of data processing and execution logic
 //!
 //! # Usage
-//! ```rust
-//! use chasqui_server::application::services::data_trait_executor;
+//! ```rust,ignore
+//! use actix_crud::application::services::data_trait_executor;
 //! ```
 //!
 //! The services module is designed to:
