@@ -1,18 +1,37 @@
+//! SurrealDB database implementation for the application.
+//!
+//! This module provides a `Database` struct that wraps a SurrealDB client and
+//! handles connection setup, authentication, and namespace/database selection.
+//! It reads configuration from environment variables with sensible defaults.
+
 use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Error, Surreal};
 use std::env;
 
-// Database struct represents a connection to SurrealDB
+/// A connection to a SurrealDB database instance.
+///
+/// This struct holds the SurrealDB client along with the namespace and database
+/// names being used. It's designed to be cloned and shared across threads.
 #[derive(Clone)]
 pub struct Database {
-    pub client: Surreal<Client>,  // The SurrealDB client
-    pub namespace: String,        // The namespace being used
-    pub db_name: String,          // The name of the database
+    /// The underlying SurrealDB client instance.
+    pub client: Surreal<Client>,
+    /// The namespace currently in use.
+    pub namespace: String,
+    /// The name of the currently selected database.
+    pub db_name: String,
 }
 
 impl Database {
-    // Initialize the database connection
+    /// Initializes a new database connection with the following steps:
+    /// 1. Connects to the SurrealDB server using `SURREALDB_HOST` (default: 127.0.0.1:8002)
+    /// 2. Authenticates using `SURREALDB_USER`/`SURREALDB_PASS` (default: root/root)
+    /// 3. Selects namespace/database from `SURREALDB_NAMESPACE`/`SURREALDB_DATABASE`
+    ///    (default: "surreal"/"task")
+    ///
+    /// # Errors
+    /// Returns `Err` if any step fails (connection, authentication, or selection).
     pub async fn init() -> Result<Self, Error> {
         println!("Starting connection to SurrealDB...");
         // Create a new SurrealDB client and connect to the server

@@ -1,8 +1,22 @@
-// Import the task_error module
-pub mod task_error;
-// Re-export the TaskError type for easier access
-pub use task_error::TaskError;
+//! Error Handling Module
+//!
+//! This module provides centralized error handling for the application.
+//! It defines and manages all error types used throughout the system.
+//!
+//! # Module Structure
+//! - `task_error`: Task-related error definitions
+//!
+//! # Usage
+//! ```rust
+//! use chasqui_server::error::TaskError;
+//! ```
+//!
+//! The error module is designed to:
+//! - Provide consistent error handling
+//! - Define domain-specific error types
+//! - Enable error propagation
+//! - Facilitate error reporting
 
-// This file serves as a central point for error handling in the application.
-// It imports and re-exports error types from various modules, making them
-// easily accessible throughout the project.
+// Import and re-export error types
+pub mod task_error;
+pub use task_error::TaskError;

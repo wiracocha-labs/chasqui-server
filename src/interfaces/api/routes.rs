@@ -1,9 +1,23 @@
+//! Routes configuration module
+//! This module defines and configures all API routes for the application.
+
 use actix_web::web;
 
-// Configuration function for setting up API routes
+/// Configures all API routes for the application
+///
+/// # Arguments
+/// * `cfg` - Service configuration instance from Actix-web
+///
+/// # Route Structure
+/// All routes are prefixed with '/api' and include:
+/// - GET    /tasks       -> Retrieve all tasks
+/// - POST   /tasks       -> Create a new task
+/// - PATCH  /tasks/{uuid}-> Update an existing task
+/// - POST   /register    -> Register a new user
+/// - POST   /login       -> Authenticate a user
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        // Create a scope for all API routes
+        // Create a scope for all API routes under /api prefix
         web::scope("/api")
             // GET endpoint for retrieving tasks
             .route("/tasks", web::get().to(crate::interfaces::api::task_handlers::get_task))

@@ -1,3 +1,9 @@
+//! Logging middleware for Actix-Web applications.
+//!
+//! This module provides a simple logging middleware that logs incoming requests
+//! and outgoing responses to the console. It's useful for development and
+//! debugging purposes.
+
 use actix_web::{dev::{ServiceRequest, ServiceResponse, Transform, Service}, Error};
 use futures::future::{ok, Ready};
 use std::task::{Context, Poll};
@@ -5,7 +11,11 @@ use std::pin::Pin;
 use std::future::Future;
 use std::rc::Rc;
 
-// Logging struct represents the logging middleware
+/// Middleware for logging HTTP requests and responses.
+///
+/// This struct implements Actix-Web's `Transform` trait to wrap services
+/// with logging capabilities. It logs the HTTP method and URI of each request
+/// and the status code of each response.
 pub struct Logging;
 
 // Implementation of the Transform trait for Logging
@@ -31,6 +41,7 @@ where
 
 // LoggingMiddleware struct holds the wrapped service
 pub struct LoggingMiddleware<S> {
+    /// The inner service being wrapped.
     service: Rc<S>,
 }
 
@@ -50,7 +61,11 @@ where
         self.service.poll_ready(cx)
     }
 
-    // Handle the incoming request
+    /// Processes the request and logs both the request and response.
+    ///
+    /// Logs the HTTP method and URI when a request is received, then passes
+    /// the request to the inner service. When the response is ready, logs
+    /// the status code before returning it.
     fn call(&self, req: ServiceRequest) -> Self::Future {
         // Log the incoming request
         println!("Request: {} {}", req.method(), req.uri());

@@ -1,14 +1,28 @@
-// Sub-modules for different types of models
+//! Models Module
+//!
+//! This module organizes the core domain model components of the application.
+//! It provides entity definitions and trait implementations.
+//!
+//! # Module Structure
+//! - `entities`: Domain entities and value objects
+//! - `traits`: Core behavior definitions
+//!
+//! # Usage
+//! ```rust
+//! use chasqui_server::models::{Task, User};
+//! use chasqui_server::models::traits::TaskDataTrait;
+//! ```
+//!
+//! The models module is designed to:
+//! - Centralize domain model definitions
+//! - Provide easy access to common types
+//! - Organize related model components
+//! - Support clean architecture principles
 
-pub mod entities;  // Concrete data structures representing domain objects
-pub mod traits;    // Trait definitions for data access and manipulation
+// Core domain model modules
+pub mod entities;
+pub mod traits;
 
-// Re-exports of commonly used types for easier access
+// Re-export commonly used types
 pub use entities::task::Task;
 pub use entities::user::User;
-
-// This file organizes the data models used in the application.
-// It separates concrete entities from trait definitions and
-// re-exports frequently used types to simplify imports in other parts of the code.
-// This structure promotes modularity and makes it easier to manage and extend
-// the application's data model.

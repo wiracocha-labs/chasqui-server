@@ -1,13 +1,26 @@
-// Module declarations for the main components of the application
+//! Chasqui Server Library
+//!
+//! This is the root module of the Chasqui Server application, implementing
+//! a webhook handling and data processing system.
+//!
+//! # Module Structure
+//! - `models`: Core domain models and traits
+//! - `interfaces`: API endpoints and data access
+//! - `infrastructure`: Technical implementations
+//! - `config`: Application configuration
+//! - `error`: Error handling system
+//! - `application`: Business logic and services
+//!
+//! # Architecture
+//! The application follows clean architecture principles with layers:
+//! - Domain (models)
+//! - Application (services)
+//! - Infrastructure (technical details)
+//! - Interfaces (API and repositories)
 
-pub mod models;       // Data models and traits
-pub mod interfaces;   // API interfaces and handlers
-pub mod infrastructure; // Database and other infrastructure components
-pub mod config;       // Application configuration
-pub mod error;        // Error handling
-pub mod application;  // Application logic and services
-
-// This file serves as the root of the library crate, organizing the
-// application's modules and making them publicly accessible.
-// It provides a clear structure for the project and allows other
-// parts of the application (or external crates) to import these modules.
+pub mod models;
+pub mod interfaces;
+pub mod infrastructure;
+pub mod config;
+pub mod error;
+pub mod application;
