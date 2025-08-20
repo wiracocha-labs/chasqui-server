@@ -84,13 +84,17 @@ struct RegistrationResponse {
 /// - 200 OK if registration successful
 /// - 500 Internal Server Error if registration fails
 pub async fn register(user_data: web::Json<RegisterRequest>, db: web::Data<Database>) -> impl Responder {
+    info!("Register attempt: username={}, email={}", user_data.username, user_data.email);
+
     // Validate username: only alphabetic letters allowed
     if !user_data.username.chars().all(|c| c.is_alphabetic()) {
+        warn!("Register rejected: invalid username format");
         return HttpResponse::BadRequest().body("Username must contain only letters");
     }
 
     // Basic email validation (adjust with proper validator if desired)
     if !user_data.email.contains('@') || user_data.email.trim().len() < 5 {
+        warn!("Register rejected: invalid email");
         return HttpResponse::BadRequest().body("Invalid email");
     }
 
@@ -100,20 +104,29 @@ pub async fn register(user_data: web::Json<RegisterRequest>, db: web::Data<Datab
         user_data.email.clone(),
         user_data.password.clone(),
     ) {
-        Ok(user) => user,
+        Ok(user) => {
+            debug!("User::new OK for username={}", user_data.username);
+            user
+        },
         Err(e) => {
-            // Log the error in real code, but return a generic message to the client
+            error!("Register failed hashing password: {}", e);
             return HttpResponse::InternalServerError().body(format!("internal error: {}", e));
         }
     };
 
     // add_user devuelve Option<User> (Some si se creó, None si falló)
     match <Database as UserDataTrait>::add_user(&db, user).await {
-        Some(_) => HttpResponse::Ok().json(RegistrationResponse {
-            create: "success".to_string(),
-            message: "User created successfully".to_string(),
-        }),
-        None => HttpResponse::InternalServerError().finish(),
+        Some(_) => {
+            info!("Register success: username={}", user_data.username);
+            HttpResponse::Ok().json(RegistrationResponse {
+                create: "success".to_string(),
+                message: "User created successfully".to_string(),
+            })
+        },
+        None => {
+            error!("Register failed persisting user: username={}", user_data.username);
+            HttpResponse::InternalServerError().finish()
+        },
     }
 }
 

@@ -5,6 +5,7 @@ use crate::models::entities::task::Task;
 use crate::infrastructure::database::surrealdb::Database;
 use surrealdb::Error;
 use async_trait::async_trait;
+use log::{info, debug, warn, error}; // añadido
 
 /// Defines the interface for task-related database operations
 #[async_trait]
@@ -39,19 +40,15 @@ pub trait TaskDataTrait {
 impl TaskDataTrait for Database {
     // Retrieve all tasks from the database
     async fn get_all_tasks(&self) -> Option<Vec<Task>> {
-        println!("Attempting to retrieve all tasks...");
-        // Execute a SELECT query on the "task" table to retrieve all tasks
-        // This uses SurrealDB's built-in select operation
+        info!("Tasks: retrieving all");
         let result = self.client.select("task").await;
-        
-        // Handle the query result, returning None if there's an error
         match result {
             Ok(all_tasks) => {
-                println!("Tasks retrieved successfully.");
+                info!("Tasks: retrieved {}", all_tasks.len());
                 Some(all_tasks)
             },
             Err(e) => {
-                println!("Error retrieving tasks: {:?}", e);
+                error!("Tasks: error retrieving all -> {:?}", e);
                 None
             },
         }
@@ -59,24 +56,28 @@ impl TaskDataTrait for Database {
 
     // Add a new task to the database
     async fn add_task(&self, new_task: Task) -> Option<Task> {
-        println!("Attempting to add a new task...");
-        // Create a new task record with the specified UUID
-        // The create operation takes a tuple of (table_name, record_id)
-        // content() method sets the record's content to our new_task
+        // Guardar datos antes de mover new_task
+        let uuid_dbg = new_task.uuid.clone();
+        let name_dbg = new_task.task_name.clone();
+        info!("Tasks: add start uuid={} name={}", uuid_dbg, name_dbg);
+
         let created_task = self
             .client
-            .create(("task", new_task.uuid.clone()))
+            .create(("task", uuid_dbg.clone()))
             .content(new_task)
             .await;
 
-        // Handle the creation result
         match created_task {
             Ok(created) => {
-                println!("Task created successfully.");
+                if created.is_some() {
+                    info!("Tasks: add success uuid={}", uuid_dbg);
+                } else {
+                    warn!("Tasks: add returned None uuid={}", uuid_dbg);
+                }
                 created
             },
             Err(e) => {
-                println!("Error creating task: {:?}", e);
+                error!("Tasks: add DB error uuid={} -> {:?}", uuid_dbg, e);
                 None
             },
         }
@@ -84,34 +85,47 @@ impl TaskDataTrait for Database {
 
     // Update an existing task in the database
     async fn update_task(&self, uuid: String) -> Option<Task> {
-        // First, check if the task exists in the database
-        // Using select with a specific record ID (uuid)
+        debug!("Tasks: update check uuid={}", uuid);
         let find_task: Result<Option<Task>, Error> = self.client.select(("task", &uuid)).await;
 
         match find_task {
             Ok(found) => {
                 match found {
                     Some(_found_task) => {
-                        // If task exists, update it using merge operation
-                        // merge() combines existing data with new data
+                        debug!("Tasks: updating uuid={}", uuid);
                         let updated_task: Result<Option<Task>, Error> = self
                             .client
                             .update(("task", &uuid))
                             .merge(Task {
-                                uuid,
-                                task_name: String::from("Completed") // Mark as completed
+                                uuid: uuid.clone(),
+                                task_name: String::from("Completed")
                             })
                             .await;
-                        // Return the updated task or None if update failed
                         match updated_task {
-                            Ok(updated) => updated,
-                            Err(_) => None,
+                            Ok(updated) => {
+                                if updated.is_some() {
+                                    info!("Tasks: update success uuid={}", uuid);
+                                } else {
+                                    warn!("Tasks: update returned None uuid={}", uuid);
+                                }
+                                updated
+                            },
+                            Err(e) => {
+                                error!("Tasks: update DB error uuid={} -> {:?}", uuid, e);
+                                None
+                            },
                         }
                     },
-                    None => None, // Task not found
+                    None => {
+                        warn!("Tasks: not found uuid={}", uuid);
+                        None
+                    },
                 }
             },
-            Err(_) => None, // Database error
+            Err(e) => {
+                error!("Tasks: find DB error uuid={} -> {:?}", uuid, e);
+                None
+            },
         }
     }
 }

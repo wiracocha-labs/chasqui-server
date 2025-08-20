@@ -24,3 +24,22 @@ pub mod infrastructure;
 pub mod config;
 pub mod error;
 pub mod application;
+
+/// Inicializa logging usando una única variable APP_LOG_LEVEL.
+/// Valores válidos: error | warn | info | debug | trace.
+/// Default: info.
+pub fn init_logging_from_env() {
+	use env_logger::Builder;
+	use log::LevelFilter;
+	use std::str::FromStr;
+
+	let val = std::env::var("APP_LOG_LEVEL").unwrap_or_else(|_| "info".to_string());
+	let lvl = LevelFilter::from_str(&val).unwrap_or(LevelFilter::Info);
+
+	let mut builder = Builder::new();
+	// Global y módulos clave al mismo nivel
+	builder.filter_level(lvl);
+	builder.filter_module("actix_web", lvl);
+	builder.filter_module("actix_crud", lvl);
+	let _ = builder.try_init();
+}

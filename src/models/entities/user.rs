@@ -15,6 +15,7 @@ use crate::infrastructure::auth::jwt::hash_password;
 use bcrypt::BcryptError;
 use surrealdb::sql::Thing;
 use uuid::Uuid;
+use log::debug; // añadido
 
 /// Represents a User in the system
 #[derive(Debug, Serialize, Deserialize)]
@@ -40,6 +41,7 @@ impl User {
     ///
     /// Returns hashing errors from bcrypt on failure.
     pub fn new(username: String, email: String, password: String) -> Result<Self, BcryptError> {
+        debug!("User::new creating user with username={} email={}", username, email);
         // Hash the provided password (propagate bcrypt error)
         let hashed_password = hash_password(&password)?;
         let uuid = Uuid::new_v4().to_string();

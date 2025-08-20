@@ -19,6 +19,7 @@ use surrealdb::engine::remote::ws::{Client, Ws};
 use surrealdb::opt::auth::Root;
 use surrealdb::{Error, Surreal};
 use std::env;
+use log::{info, debug, error};
 
 /// A connection to a SurrealDB database instance.
 ///
@@ -45,12 +46,12 @@ impl Database {
     /// # Errors
     /// Returns `Err` if any step fails (connection, authentication, or selection).
     pub async fn init() -> Result<Self, Error> {
-        println!("Starting connection to SurrealDB...");
+        info!("SurrealDB: starting connection");
         // Create a new SurrealDB client and connect to the server
         let host = env::var("SURREALDB_HOST").unwrap_or_else(|_| "127.0.0.1:8002".to_string());
         let client = Surreal::new::<Ws>(host).await?;
         
-        println!("Connection established. Signing in...");
+        info!("SurrealDB: signing in");
         // Sign in to the database with root credentials
         // Read credentials from environment variables
         let username = env::var("SURREALDB_USER").unwrap_or_else(|_| "root".to_string());
@@ -62,13 +63,13 @@ impl Database {
             })
             .await?;
         
-        println!("Signed in. Selecting namespace and database...");
+        info!("SurrealDB: selecting namespace and database");
         // Select the namespace and database to use
         let namespace = env::var("SURREALDB_NAMESPACE").unwrap_or_else(|_| "surreal".to_string());
         let db_name = env::var("SURREALDB_DATABASE").unwrap_or_else(|_| "task".to_string());
         client.use_ns(&namespace).use_db(&db_name).await?;
         
-        println!("Namespace and database selected.");
+        info!("SurrealDB: ready (ns={}, db={})", namespace, db_name);
         // Return a new Database instance
         Ok(Database {
             client,
@@ -85,15 +86,22 @@ impl Database {
     /// Returns:
     /// - Some(User) when found and deserialized, None otherwise.
     pub async fn find_user_by_email(&self, email: &str) -> Option<User> {
+        debug!("SurrealDB: find_user_by_email {}", email);
         let sql = "SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1";
-        match self
-            .client
-            .query(sql)
-            .bind(("email", email))
-            .await
-        {
-            Ok(mut resp) => resp.take::<Option<User>>(0).ok().flatten(),
-            Err(_) => None,
+        match self.client.query(sql).bind(("email", email)).await {
+            Ok(mut resp) => {
+                let out = resp.take::<Option<User>>(0).ok().flatten();
+                if out.is_some() {
+                    debug!("SurrealDB: user found by email");
+                } else {
+                    debug!("SurrealDB: user not found by email");
+                }
+                out
+            }
+            Err(e) => {
+                error!("SurrealDB query error (find_user_by_email): {:?}", e);
+                None
+            }
         }
     }
 }

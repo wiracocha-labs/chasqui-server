@@ -4,7 +4,7 @@
 //! Implementación actual (SurrealDB):
 //! - add_user: inserta en tabla `user`, retorna Option<User>.
 //! - find_user_by_username/email: consultas parametrizadas con `LIMIT 1`
-//!   y filtro `AND defined(password)` para evitar filas legacy sin hash.
+//!   y filtro `AND password != NONE` para evitar filas legacy sin hash.
 //!
 //! Notas:
 //! - Retorna None ante errores de DB o deserialización.
@@ -14,6 +14,7 @@
 use crate::models::entities::user::User;
 use crate::infrastructure::database::surrealdb::Database;
 use async_trait::async_trait;
+use log::{info, debug, warn, error}; // añadido
 
 /// Defines the interface for user-related database operations
 #[async_trait(?Send)]
@@ -51,7 +52,7 @@ pub trait UserDataTrait {
 impl UserDataTrait for Database {
     // Add a new user to the database
     async fn add_user(&self, new_user: User) -> Option<User> {
-        println!("Attempting to add a new user...");
+        info!("DB add_user: start");
         // SurrealDB: create -> Result<Vec<User>, Error> when creating in a table
         let created_users = self
             .client
@@ -64,14 +65,14 @@ impl UserDataTrait for Database {
             Ok(users) => {
                 let user_opt = users.into_iter().next();
                 if user_opt.is_some() {
-                    println!("User created successfully.");
+                    info!("DB add_user: success");
                 } else {
-                    println!("Failed to create user.");
+                    warn!("DB add_user: no user returned");
                 }
                 user_opt
             }
             Err(e) => {
-                println!("Error creating user: {:?}", e);
+                error!("DB add_user error: {:?}", e);
                 None
             }
         }
@@ -79,7 +80,7 @@ impl UserDataTrait for Database {
 
     // Find a user by their username
     async fn find_user_by_username(&self, username: &str) -> Option<User> {
-        println!("Searching for user by username: {}", username);
+        debug!("DB find_user_by_username: {}", username);
         let result = self
             .client
             .query("SELECT * FROM user WHERE username = $username AND password != NONE LIMIT 1")
@@ -89,14 +90,21 @@ impl UserDataTrait for Database {
         // Process the query result
         match result {
             Ok(mut response) => match response.take::<Option<User>>(0) {
-                Ok(user_opt) => user_opt,
+                Ok(user_opt) => {
+                    if user_opt.is_some() {
+                        debug!("DB find_user_by_username: found");
+                    } else {
+                        debug!("DB find_user_by_username: not found");
+                    }
+                    user_opt
+                },
                 Err(e) => {
-                    println!("Error deserializing user: {:?}", e);
+                    error!("DB find_user_by_username deserialization error: {:?}", e);
                     None
                 }
             },
             Err(e) => {
-                println!("Error searching for user: {:?}", e);
+                error!("DB find_user_by_username query error: {:?}", e);
                 None
             }
         }
@@ -104,7 +112,7 @@ impl UserDataTrait for Database {
 
     // Find a user by their email
     async fn find_user_by_email(&self, email: &str) -> Option<User> {
-        println!("Searching for user by email: {}", email);
+        debug!("DB find_user_by_email: {}", email);
         let result = self
             .client
             .query("SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1")
@@ -114,14 +122,21 @@ impl UserDataTrait for Database {
         // Process the query result
         match result {
             Ok(mut response) => match response.take::<Option<User>>(0) {
-                Ok(user_opt) => user_opt,
+                Ok(user_opt) => {
+                    if user_opt.is_some() {
+                        debug!("DB find_user_by_email: found");
+                    } else {
+                        debug!("DB find_user_by_email: not found");
+                    }
+                    user_opt
+                },
                 Err(e) => {
-                    println!("Error deserializing user: {:?}", e);
+                    error!("DB find_user_by_email deserialization error: {:?}", e);
                     None
                 }
             },
             Err(e) => {
-                println!("Error searching for user: {:?}", e);
+                error!("DB find_user_by_email query error: {:?}", e);
                 None
             }
         }
