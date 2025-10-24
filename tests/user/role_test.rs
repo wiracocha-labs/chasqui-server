@@ -1,5 +1,5 @@
 // tests/role_model_test.rs
-#[cfg(test)]
+#[test]
 mod tests {
     use super::*;
 
@@ -22,7 +22,7 @@ mod tests {
 }
 
 // tests/user_model_test.rs
-#[cfg(test)]
+#[test]
 mod tests {
     use super::*;
 
