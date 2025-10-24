@@ -39,3 +39,11 @@ actix-rt = "2.10"
 serde_json = "1.0"
 awc = "3.5"                        # Cliente WebSocket para tests
 tempfile = "3.10"  
+
+[[test]]
+name = "role_test"
+path = "tests/user/role_test.rs"
+
+[[test]]
+name = "jwt_test"
+path = "tests/auth/jwt_test.rs"
