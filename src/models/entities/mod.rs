@@ -6,10 +6,11 @@
 //! # Module Structure
 //! - `task`: Task entity definitions and related types
 //! - `user`: User entity definitions and related types
+//! - `role`: Role entity definitions and related types
 //!
 //! # Usage
 //! ```rust,ignore
-//! use actix_crud::models::entities::{task, user};
+//! use actix_crud::models::entities::{task, user, role};
 //! ```
 //!
 //! The entities module is designed to:
@@ -20,3 +21,4 @@
 
 pub mod task;
 pub mod user;
+pub mod role;

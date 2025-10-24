@@ -1,45 +1,122 @@
-# chasqui-server
-Chasqui Server es un backend en Rust (Actix-web) para manejar webhooks, integraciones y procesamiento seguro de datos. Optimizado para bajo consumo y alta velocidad, potencia la experiencia descentralizada de Chasqui con foco en privacidad y colaboración abierta.
+# Chasqui Server
 
-## Características
+Backend en Rust (Actix-web) para manejo seguro de datos y autenticación. Optimizado para rendimiento, seguridad y facilidad de desarrollo.
 
-- Sistema robusto de webhooks con validación y rate limiting
-- Cache optimizado para alto rendimiento
-- Sistema de logging estructurado
-- Seguridad mejorada con validación de firmas
-- Manejo eficiente de recursos
+## 🚀 Características
 
-## Módulos
+- ✅ **API RESTful** con Actix-web 4.x
+- 🔐 **Autenticación JWT** con bcrypt
+- 🗃️ **Base de datos** SurrealDB
+- 📝 **Logging estructurado** con diferentes niveles
+- ⚙️ **Configuración** mediante variables de entorno
+- 🛡️ **Validación de datos** con la crate `validator`
+- 🔄 **Operaciones asíncronas** con async/await
 
-- `webhooks`: Gestión de webhooks y callbacks
-- `cache`: Sistema de caché en memoria y disco
-- `logging`: Logging estructurado
-- `security`: Validación y seguridad
-- `models`: Modelos de dominio
-- `interfaces`: APIs y endpoints
-- `infrastructure`: Implementaciones técnicas
+## 🏗️ Estructura del Proyecto
 
-## Seguridad
+```
+src/
+├── application/    # Lógica de negocio
+├── config/        # Configuración de la aplicación
+├── error/         # Manejo de errores
+├── infrastructure/# Implementaciones técnicas
+│   └── database/  # Conexión y operaciones con SurrealDB
+├── interfaces/    # Controladores y rutas de la API
+├── models/        # Estructuras de datos
+└── lib.rs        # Punto de entrada de la biblioteca
+```
 
-### 1. Autenticación
-- Implementado
-  - Registro y login:
-    - POST /api/register (valida username alfabético y email básico)
-    - POST /api/login (acepta email o username + password; fallback entre ambos)
-  - Hash de contraseñas con bcrypt (BCRYPT_COST configurable)
-  - JWT HS256 con SECRET_KEY (obligatorio) y expiración via JWT_EXP_SECONDS
-  - Claims: sub (uuid), iat, exp, username, roles (por defecto ["user"])
-  - Compatibilidad legacy: User.password y User.email opcionales; consultas filtran filas sin hash con password != NONE
-- Pendiente
-  - Refresh tokens, rotación de claves, blacklist/invalidación de tokens, logout
-  - Recuperación/cambio de contraseña
-  - Validación estricta de email (validator) y unicidad de username/email
+## 🚀 Comenzando
+
+### Requisitos
+
+- Rust 1.70+
+- SurrealDB (puede ejecutarse localmente o en contenedor)
+
+### Instalación
+
+1. Clona el repositorio:
+   ```bash
+   git clone https://github.com/tu-usuario/chasqui-server.git
+   cd chasqui-server
+   ```
+
+2. Configura las variables de entorno (crea un archivo `.env`):
+   ```env
+   # Servidor
+   SERVER_HOST=127.0.0.1
+   SERVER_PORT=8080
+   
+   # Base de datos
+   DATABASE_URL=ws://localhost:8000
+   DATABASE_NS=chasqui
+   DATABASE_DB=chasqui
+   
+   # Autenticación
+   JWT_SECRET=tu_clave_secreta_muy_segura
+   JWT_EXPIRATION=86400  # segundos (24 horas)
+   
+   # Logging
+   RUST_LOG=info
+   ```
+
+3. Ejecuta el servidor:
+   ```bash
+   cargo run
+   ```
+
+## 🔒 Autenticación
+
+### Endpoints
+
+- `POST /api/register` - Registro de usuario
+- `POST /api/login` - Inicio de sesión
+
+### Flujo JWT
+
+1. El cliente se autentica con email/username y contraseña
+2. El servidor responde con un JWT firmado
+3. El cliente incluye el token en el header `Authorization: Bearer <token>`
+
+## 🛡️ Seguridad
+
+### Autenticación
+
+✅ **Implementado**
+- Registro y autenticación de usuarios
+- Hash seguro de contraseñas con bcrypt
+- Tokens JWT con expiración
+- Validación básica de entrada
+
+📅 **Próximamente**
+- Refresh tokens
+- Recuperación de contraseña
+- Autenticación de dos factores
+- OAuth2/OpenID Connect
 
 ### 2. Autorización
-- Implementado
-  - roles incluido en el JWT (valor por defecto)
-- Pendiente
-  - Middleware/guards RBAC por ruta; verificación de roles/permisos granulares
+
+✅ **Implementado**
+- Roles básicos en JWT
+- Protección de rutas con autenticación
+
+📅 **Próximamente**
+- Control de acceso basado en roles (RBAC)
+- Permisos granulares
+
+## 📊 Estado del Proyecto
+
+### Módulos Principales
+
+| Módulo | Estado | Descripción |
+|--------|--------|-------------|
+| API REST | ✅ Estable | Endpoints básicos funcionando |
+| Autenticación | ✅ Estable | JWT + bcrypt |
+| Base de Datos | ✅ Estable | Conexión con SurrealDB |
+| Logging | ✅ Estable | Sistema de logs estructurado |
+| Validación | ✅ Estable | Validación de datos de entrada |
+| Webhooks | 🚧 En desarrollo | En implementación |
+| Caché | 📅 Pendiente | Por implementar |
 
 ### 3. Protección de Datos
 - Implementado
@@ -89,10 +166,86 @@ Chasqui Server es un backend en Rust (Actix-web) para manejar webhooks, integrac
   - Transacciones/consistencia donde aplique
 
 ### 9. Pruebas
-- Implementado
-  - Tests de errores (mapeo HTTP), JWT y configuración; doctests ajustados
-- Pendiente
-  - Tests de flujo de autenticación/autorización y e2e de API
+
+El proyecto incluye pruebas unitarias y de integración para garantizar la calidad del código.
+
+#### Estructura de Pruebas
+
+```
+tests/
+├── auth/               # Pruebas de autenticación
+│   └── jwt_tests.rs    # Pruebas de generación/validación de JWT
+├── common/             # Utilidades compartidas para pruebas
+│   └── mod.rs         
+├── config/             # Pruebas de configuración
+│   ├── config_tests.rs # Pruebas de carga de configuración
+│   └── error_tests.rs  # Pruebas de manejo de errores
+└── user/               # Pruebas de modelos de usuario
+    └── role_tests.rs   # Pruebas de roles y permisos
+```
+
+#### Comandos de Prueba
+
+Ejecutar todas las pruebas:
+```bash
+cargo test
+```
+
+Ejecutar pruebas específicas por módulo:
+```bash
+# Solo pruebas de autenticación
+cargo test auth::
+
+# Solo pruebas de configuración
+cargo test config::
+
+# Solo pruebas de modelos de usuario
+cargo test user::
+```
+
+Opciones útiles:
+```bash
+# Mostrar salida de las pruebas (útil para ver logs)
+cargo test -- --nocapture
+
+# Ejecutar pruebas en un solo hilo (útil para debugging)
+cargo test -- --test-threads=1
+
+# Ejecutar una prueba específica por nombre
+cargo test nombre_de_la_prueba
+```
+
+#### Configuración para Pruebas
+
+Las pruebas utilizan una base de datos en memoria para garantizar aislamiento. El archivo `tests/config/database_init_ignored.rs` contiene la configuración de inicialización de la base de datos para pruebas.
+
+#### Convenciones
+
+- Los archivos de prueba usan el sufijo `_tests.rs`
+- Los módulos de prueba siguen la misma estructura que `src/`
+- Las pruebas deben ser independientes y poder ejecutarse en cualquier orden
+
+#### Agregando Nuevas Pruebas
+
+1. Crea un nuevo archivo en el directorio correspondiente
+2. Usa `#[test]` para funciones de prueba
+3. Para pruebas asíncronas, usa `#[actix_rt::test]`
+4. Usa `assert!`, `assert_eq!`, etc. para las aserciones
+
+#### Depuración
+
+Para depurar pruebas fallidas:
+```bash
+RUST_BACKTRACE=1 cargo test -- --nocapture
+```
+
+#### Cobertura de Pruebas
+
+Para generar un informe de cobertura (requiere `cargo-tarpaulin`):
+```bash
+cargo tarpaulin --ignore-tests --out Html
+```
+
 
 ## Modo Debug (entorno)
 Controla la verbosidad con una sola variable de entorno:
@@ -110,3 +263,12 @@ Notas
 - info muestra información operativa junto a warn y error (recomendado en producción).
 
 Nota: APP_DEBUG es solo una bandera de configuración del entorno. Ajusta RUST_LOG según tus necesidades.
+
+
+## 🤝 Contributing
+
+Contributions are welcome. Please read our [contributing guidelines](CONTRIBUTING.md) before submitting a PR.
+
+## 📄 License
+
+This project is under the MIT license. See the [LICENSE](LICENSE) file for more details.
