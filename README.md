@@ -1,269 +1,267 @@
 # Chasqui Server
 
-Backend en Rust (Actix-web) para manejo seguro de datos y autenticación. Optimizado para rendimiento, seguridad y facilidad de desarrollo.
+Backend in Rust (Actix-web) for secure data management and authentication. Optimized for performance, security, and development ease.
 
-## 🚀 Características
+## 🚀 Features
 
-- ✅ **API RESTful** con Actix-web 4.x
-- 🔐 **Autenticación JWT** con bcrypt
-- 🗃️ **Base de datos** SurrealDB
-- 📝 **Logging estructurado** con diferentes niveles
-- ⚙️ **Configuración** mediante variables de entorno
-- 🛡️ **Validación de datos** con la crate `validator`
-- 🔄 **Operaciones asíncronas** con async/await
+- ✅ **RESTful API** with Actix-web 4.x
+- 🔐 **JWT Authentication** with bcrypt
+- 🗃️ **Database** SurrealDB
+- 📝 **Structured logging** with different levels
+- ⚙️ **Configuration** through environment variables
+- 🛡️ **Data validation** with the `validator` crate
+- 🔄 **Asynchronous operations** with async/await
 
-## 🏗️ Estructura del Proyecto
+## 🏗️ Project Structure
 
 ```
 src/
-├── application/    # Lógica de negocio
-├── config/        # Configuración de la aplicación
-├── error/         # Manejo de errores
-├── infrastructure/# Implementaciones técnicas
-│   └── database/  # Conexión y operaciones con SurrealDB
-├── interfaces/    # Controladores y rutas de la API
-├── models/        # Estructuras de datos
-└── lib.rs        # Punto de entrada de la biblioteca
+├── application/    # Business logic
+├── config/        # Application configuration
+├── error/         # Error handling
+├── infrastructure/# Technical implementations
+│   └── database/  # SurrealDB connection and operations
+├── interfaces/    # API controllers and routes
+├── models/        # Data structures
+└── lib.rs        # Library entry point
 ```
 
-## 🚀 Comenzando
+## 🚀 Getting Started
 
-### Requisitos
+### Requirements
 
 - Rust 1.70+
-- SurrealDB (puede ejecutarse localmente o en contenedor)
+- SurrealDB (can run locally or in a container)
 
-### Instalación
+### Installation
 
-1. Clona el repositorio:
+1. Clone the repository:
    ```bash
-   git clone https://github.com/tu-usuario/chasqui-server.git
+   git clone https://github.com/your-username/chasqui-server.git
    cd chasqui-server
    ```
 
-2. Configura las variables de entorno (crea un archivo `.env`):
+2. Configure environment variables (create a `.env` file):
    ```env
-   # Servidor
+   # Server
    SERVER_HOST=127.0.0.1
    SERVER_PORT=8080
    
-   # Base de datos
+   # Database
    DATABASE_URL=ws://localhost:8000
    DATABASE_NS=chasqui
    DATABASE_DB=chasqui
    
-   # Autenticación
-   JWT_SECRET=tu_clave_secreta_muy_segura
-   JWT_EXPIRATION=86400  # segundos (24 horas)
+   # Authentication
+   JWT_SECRET=your_very_secure_secret_key
+   JWT_EXPIRATION=86400  # seconds (24 hours)
    
    # Logging
    RUST_LOG=info
    ```
 
-3. Ejecuta el servidor:
+3. Run the server:
    ```bash
    cargo run
    ```
 
-## 🔒 Autenticación
+## 🔒 Authentication
 
 ### Endpoints
 
-- `POST /api/register` - Registro de usuario
-- `POST /api/login` - Inicio de sesión
+- `POST /api/register` - User registration
+- `POST /api/login` - User login
 
-### Flujo JWT
+### JWT Flow
 
-1. El cliente se autentica con email/username y contraseña
-2. El servidor responde con un JWT firmado
-3. El cliente incluye el token en el header `Authorization: Bearer <token>`
+1. Client authenticates with email/username and password
+2. Server responds with a signed JWT
+3. Client includes the token in the `Authorization: Bearer <token>` header
 
-## 🛡️ Seguridad
+## 🛡️ Security
 
-### Autenticación
+### Authentication
 
-✅ **Implementado**
-- Registro y autenticación de usuarios
-- Hash seguro de contraseñas con bcrypt
-- Tokens JWT con expiración
-- Validación básica de entrada
+✅ **Implemented**
+- User registration and authentication
+- Secure password hashing with bcrypt
+- JWT tokens with expiration
+- Basic input validation
 
-📅 **Próximamente**
+📅 **Coming Soon**
 - Refresh tokens
-- Recuperación de contraseña
-- Autenticación de dos factores
+- Password recovery
+- Two-factor authentication
 - OAuth2/OpenID Connect
 
-### 2. Autorización
+### 2. Authorization
 
-✅ **Implementado**
-- Roles básicos en JWT
-- Protección de rutas con autenticación
+✅ **Implemented**
+- Basic roles in JWT
+- Route protection with authentication
 
-📅 **Próximamente**
-- Control de acceso basado en roles (RBAC)
-- Permisos granulares
+📅 **Coming Soon**
+- Role-based access control (RBAC)
+- Granular permissions
 
-## 📊 Estado del Proyecto
+## 📊 Project Status
 
-### Módulos Principales
+### Main Modules
 
-| Módulo | Estado | Descripción |
+| Module | Status | Description |
 |--------|--------|-------------|
-| API REST | ✅ Estable | Endpoints básicos funcionando |
-| Autenticación | ✅ Estable | JWT + bcrypt |
-| Base de Datos | ✅ Estable | Conexión con SurrealDB |
-| Logging | ✅ Estable | Sistema de logs estructurado |
-| Validación | ✅ Estable | Validación de datos de entrada |
-| Webhooks | 🚧 En desarrollo | En implementación |
-| Caché | 📅 Pendiente | Por implementar |
+| REST API | ✅ Stable | Basic endpoints working |
+| Authentication | ✅ Stable | JWT + bcrypt |
+| Database | ✅ Stable | SurrealDB connection |
+| Logging | ✅ Stable | Structured logging system |
+| Validation | ✅ Stable | Input data validation |
+| Webhooks | 🚧 In Development | In progress |
+| Cache | 📅 Pending | To be implemented |
 
-### 3. Protección de Datos
-- Implementado
-  - Bcrypt para contraseñas y no exposición del hash en respuestas
-  - IDs de usuarios como SurrealDB Thing user:<uuid-v4>
-  - Logging configurable con APP_LOG_LEVEL
-- Pendiente
-  - Cifrado de datos sensibles en reposo/traslado adicional al TLS
-  - Reglas de complejidad de contraseñas y validaciones más robustas
-  - Sanitización/normalización de entradas a nivel de DTO
+### 3. Data Protection
+- Implemented
+  - Bcrypt for passwords and no hash exposure in responses
+  - User IDs as SurrealDB Thing user:<uuid-v4>
+  - Configurable logging with APP_LOG_LEVEL
+- Pending
+  - Encryption of sensitive data at rest/in transit beyond TLS
+  - Password complexity rules and more robust validations
+  - Input sanitization/normalization at DTO level
 
 ### 4. Rate Limiting
-- Implementado
+- Implemented
   - —
-- Pendiente
-  - Límites por IP/usuario y protección de fuerza bruta en login
+- Pending
+  - IP/user limits and brute force protection on login
 
-### 5. Auditoría
-- Implementado
-  - Logs del ciclo de vida (DB init, handlers, repos) y access logs (Actix Logger)
-  - Control de verbosidad por APP_LOG_LEVEL (error|warn|info|debug|trace)
-- Pendiente
-  - Correlación con request IDs y logging estructurado (JSON)
-  - Persistencia de auditoría y métricas (Prometheus)
+### 5. Audit
+- Implemented
+  - Lifecycle logs (DB init, handlers, repos) and access logs (Actix Logger)
+  - Verbosity control via APP_LOG_LEVEL (error|warn|info|debug|trace)
+- Pending
+  - Correlation with request IDs and structured logging (JSON)
+  - Audit persistence and metrics (Prometheus)
 
-### 6. Seguridad de APIs
-- Implementado
-  - Validación básica en DTOs (p. ej., AddTaskRequest con validator)
-- Pendiente
-  - CORS explícito, límites de tamaño de payload, tipos de contenido
-  - Validación/firmas de webhooks
-  - Validaciones de esquema más estrictas en endpoints
+### 6. API Security
+- Implemented
+  - Basic validation in DTOs (e.g., AddTaskRequest with validator)
+- Pending
+  - Explicit CORS, payload size limits, content types
+  - Webhook validation/signatures
+  - Stricter schema validations in endpoints
 
-### 7. Infraestructura
-- Implementado
+### 7. Infrastructure
+- Implemented
   - —
-- Pendiente
-  - TLS/HTTPS (reverse proxy o nativo), HSTS y security headers
-  - Timeouts y políticas de reintentos
+- Pending
+  - TLS/HTTPS (reverse proxy or native), HSTS and security headers
+  - Timeouts and retry policies
 
-### 8. Base de Datos
-- Implementado
-  - Conexión SurrealDB (WS) con consultas parametrizadas
-  - Usuarios con Thing user:<uuid-v4> y filtro password != NONE
-- Pendiente
-  - Índices únicos para username/email; migraciones y seeds
-  - Transacciones/consistencia donde aplique
+### 8. Database
+- Implemented
+  - SurrealDB (WS) connection with parameterized queries
+  - Users with Thing user:<uuid-v4> and password != NONE filter
+- Pending
+  - Unique indexes for username/email; migrations and seeds
+  - Transactions/consistency where applicable
 
-### 9. Pruebas
+### 9. Testing
 
-El proyecto incluye pruebas unitarias y de integración para garantizar la calidad del código.
+The project includes unit and integration tests to ensure code quality.
 
-#### Estructura de Pruebas
+#### Test Structure
 
 ```
 tests/
-├── auth/               # Pruebas de autenticación
-│   └── jwt_tests.rs    # Pruebas de generación/validación de JWT
-├── common/             # Utilidades compartidas para pruebas
+├── auth/               # Authentication tests
+│   └── jwt_tests.rs    # JWT generation/validation tests
+├── common/             # Shared test utilities
 │   └── mod.rs         
-├── config/             # Pruebas de configuración
-│   ├── config_tests.rs # Pruebas de carga de configuración
-│   └── error_tests.rs  # Pruebas de manejo de errores
-└── user/               # Pruebas de modelos de usuario
-    └── role_tests.rs   # Pruebas de roles y permisos
+├── config/             # Configuration tests
+│   ├── config_tests.rs # Configuration loading tests
+│   └── error_tests.rs  # Error handling tests
+└── user/               # User model tests
+    └── role_tests.rs   # Roles and permissions tests
 ```
 
-#### Comandos de Prueba
+#### Test Commands
 
-Ejecutar todas las pruebas:
+Run all tests:
 ```bash
 cargo test
 ```
 
-Ejecutar pruebas específicas por módulo:
+Run specific test modules:
 ```bash
-# Solo pruebas de autenticación
+# Only authentication tests
 cargo test auth::
 
-# Solo pruebas de configuración
+# Only configuration tests
 cargo test config::
 
-# Solo pruebas de modelos de usuario
+# Only user model tests
 cargo test user::
 ```
 
-Opciones útiles:
+Useful options:
 ```bash
-# Mostrar salida de las pruebas (útil para ver logs)
+# Show test output (useful for logs)
 cargo test -- --nocapture
 
-# Ejecutar pruebas en un solo hilo (útil para debugging)
+# Run tests in a single thread (useful for debugging)
 cargo test -- --test-threads=1
 
-# Ejecutar una prueba específica por nombre
-cargo test nombre_de_la_prueba
+# Run a specific test by name
+cargo test test_name
 ```
 
-#### Configuración para Pruebas
+#### Test Configuration
 
-Las pruebas utilizan una base de datos en memoria para garantizar aislamiento. El archivo `tests/config/database_init_ignored.rs` contiene la configuración de inicialización de la base de datos para pruebas.
+Tests use an in-memory database to ensure isolation. The `tests/config/database_init_ignored.rs` file contains the database initialization configuration for tests.
 
-#### Convenciones
+#### Conventions
 
-- Los archivos de prueba usan el sufijo `_tests.rs`
-- Los módulos de prueba siguen la misma estructura que `src/`
-- Las pruebas deben ser independientes y poder ejecutarse en cualquier orden
+- Test files use the `_tests.rs` suffix
+- Test modules follow the same structure as `src/`
+- Tests should be independent and runnable in any order
 
-#### Agregando Nuevas Pruebas
+#### Adding New Tests
 
-1. Crea un nuevo archivo en el directorio correspondiente
-2. Usa `#[test]` para funciones de prueba
-3. Para pruebas asíncronas, usa `#[actix_rt::test]`
-4. Usa `assert!`, `assert_eq!`, etc. para las aserciones
+1. Create a new file in the corresponding directory
+2. Use `#[test]` for test functions
+3. For async tests, use `#[actix_rt::test]`
+4. Use `assert!`, `assert_eq!`, etc. for assertions
 
-#### Depuración
+#### Debugging
 
-Para depurar pruebas fallidas:
+To debug failed tests:
 ```bash
 RUST_BACKTRACE=1 cargo test -- --nocapture
 ```
 
-#### Cobertura de Pruebas
+#### Test Coverage
 
-Para generar un informe de cobertura (requiere `cargo-tarpaulin`):
+To generate a coverage report (requires `cargo-tarpaulin`):
 ```bash
 cargo tarpaulin --ignore-tests --out Html
 ```
 
+## Debug Mode (Environment)
+Control verbosity with a single environment variable:
 
-## Modo Debug (entorno)
-Controla la verbosidad con una sola variable de entorno:
-
-Ejemplos
-- Desarrollo:
+Examples
+- Development:
   - APP_LOG_LEVEL=trace
-  - Opcional: RUST_BACKTRACE=1
-- Producción:
+  - Optional: RUST_BACKTRACE=1
+- Production:
   - APP_LOG_LEVEL=info
 
-Notas
-- APP_LOG_LEVEL unifica la configuración de logs. No necesitas RUST_LOG ni APP_DEBUG.
-- trace es el nivel más verboso (útil para diagnóstico en desarrollo).
-- info muestra información operativa junto a warn y error (recomendado en producción).
+Notes
+- APP_LOG_LEVEL unifies log configuration. You don't need RUST_LOG or APP_DEBUG.
+- trace is the most verbose level (useful for development diagnostics).
+- info shows operational information along with warn and error (recommended for production).
 
-Nota: APP_DEBUG es solo una bandera de configuración del entorno. Ajusta RUST_LOG según tus necesidades.
-
+Note: APP_DEBUG is just an environment configuration flag. Adjust RUST_LOG according to your needs.
 
 ## 🤝 Contributing
 
