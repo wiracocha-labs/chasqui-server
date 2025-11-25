@@ -1,5 +1,5 @@
 //! Test utilities and helpers
-use crate::mocks::user_repository::MockUserRepository;
+use super::mocks::user_repository::MockUserRepository;
 use actix_crud::models::entities::user::User;
 
 
@@ -15,6 +15,6 @@ pub fn create_test_user() -> User {
 /// Create a mock user repository with default expectations
 pub fn create_mock_user_repository() -> MockUserRepository {
     let mock = MockUserRepository::new();
-    // Configura los mocks por defecto aquí
+    // Configura las expectativas por defecto aquí si es necesario
     mock
 }

@@ -23,7 +23,7 @@ use std::collections::HashSet;
 
 
 /// Represents a User in the system
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct User {
     /// Database identifier (SurrealDB Thing). We'll store a UUID v4 as the record id.
     #[serde(skip_serializing_if = "Option::is_none")]

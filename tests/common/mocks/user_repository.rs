@@ -9,6 +9,7 @@ pub enum MockError {
     Error(String),
 }
 
+// El automock genera un struct MockUserRepository que implementa este trait
 #[automock]
 #[async_trait]
 pub trait UserRepository: Send + Sync {

@@ -2,8 +2,7 @@ use actix_crud::models::entities::user::User;
 use uuid::Uuid;
 use mockall::predicate::*;
 use actix_crud::models::entities::role::roles;
-mod common;
-use common::mocks::user_repository::MockUserRepository;
+use crate::common::mocks::user_repository::MockUserRepository;
 
 // Función auxiliar para crear un usuario de prueba
 fn create_test_user(username: &str, email: &str) -> User {
