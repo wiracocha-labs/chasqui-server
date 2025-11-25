@@ -2,24 +2,29 @@
 //!
 //! This module provides a `Database` struct that wraps a SurrealDB client and
 //! handles connection setup, authentication, and namespace/database selection.
-//! It reads configuration from environment variables with sensible defaults.
+//! It reads configuration from environment variables.
 //!
 //! Notes:
 //! - Uses parameterized queries to avoid injection.
 //! - User IDs are SurrealDB Things in the form `user:<uuid-v4>`.
 //! - Inherent helper `find_user_by_email` returns only users with a password set
 //!   (filters legacy rows) via `AND password != NONE LIMIT 1`.
+//! - Connects to a cloud-hosted SurrealDB instance (wss://) via `any::connect`.
 //!
 //! Env:
-//! - SURREALDB_HOST (ws endpoint), SURREALDB_USER, SURREALDB_PASS,
-//!   SURREALDB_NAMESPACE, SURREALDB_DATABASE.
+//! - SURREALDB_HOST (wss:// cloud endpoint)
+//! - SURREALDB_USER, SURREALDB_PASS
+//! - SURREALDB_NAMESPACE, SURREALDB_DATABASE
+//!
+//! For tests, use TEST_ prefixed variables:
+//! - TEST_SURREALDB_HOST, TEST_SURREALDB_USER, etc.
 
 use crate::models::entities::user::User;
-use surrealdb::engine::remote::ws::{Client, Ws};
+use log::{debug, error, info};
+use std::env;
+use surrealdb::engine::any;
 use surrealdb::opt::auth::Root;
 use surrealdb::{Error, Surreal};
-use std::env;
-use log::{info, debug, error};
 
 /// A connection to a SurrealDB database instance.
 ///
@@ -28,7 +33,7 @@ use log::{info, debug, error};
 #[derive(Clone)]
 pub struct Database {
     /// The underlying SurrealDB client instance.
-    pub client: Surreal<Client>,
+    pub client: Surreal<any::Any>,
     /// The namespace currently in use.
     pub namespace: String,
     /// The name of the currently selected database.
@@ -36,43 +41,76 @@ pub struct Database {
 }
 
 impl Database {
-    /// Initializes a new database connection using env vars:
-    /// - SURREALDB_HOST (default: 127.0.0.1:8002)
-    /// - SURREALDB_USER/SURREALDB_PASS (default: root/root)
-    /// - SURREALDB_NAMESPACE/SURREALDB_DATABASE (default: surreal/task)
+    /// Initializes a new database connection to a cloud-hosted SurrealDB instance.
     ///
-    /// Returns an authenticated client with ns/db selected.
+    /// Reads required environment variables:
+    /// - SURREALDB_HOST (wss:// cloud endpoint)
+    /// - SURREALDB_NAMESPACE
+    /// - SURREALDB_DATABASE
+    ///
+    /// Returns an authenticated client with namespace and database selected.
     ///
     /// # Errors
     /// Returns `Err` if any step fails (connection, authentication, or selection).
+    ///
+    /// # Panics
+    /// Panics if required environment variables are not set.
     pub async fn init() -> Result<Self, Error> {
         info!("SurrealDB: starting connection");
-        // Create a new SurrealDB client and connect to the server
-        let host = env::var("SURREALDB_HOST").unwrap_or_else(|_| "127.0.0.1:8002".to_string());
-        let client = Surreal::new::<Ws>(host).await?;
-        
-        info!("SurrealDB: signing in");
-        // Sign in to the database with root credentials
-        // Read credentials from environment variables
-        let username = env::var("SURREALDB_USER").unwrap_or_else(|_| "root".to_string());
-        let password = env::var("SURREALDB_PASS").unwrap_or_else(|_| "root".to_string());
-        client
-            .signin(Root {
-                username: &username,
-                password: &password,
-            })
-            .await?;
-        
-        info!("SurrealDB: selecting namespace and database");
-        // Select the namespace and database to use
-        let namespace = env::var("SURREALDB_NAMESPACE").unwrap_or_else(|_| "surreal".to_string());
-        let db_name = env::var("SURREALDB_DATABASE").unwrap_or_else(|_| "task".to_string());
-        client.use_ns(&namespace).use_db(&db_name).await?;
-        
-        info!("SurrealDB: ready (ns={}, db={})", namespace, db_name);
-        // Return a new Database instance
+
+        // Read environment variables with descriptive error messages
+        let host = env::var("SURREALDB_HOST")
+            .expect("FATAL: SURREALDB_HOST environment variable is not set. Please configure it in your .env file.");
+        let namespace = env::var("SURREALDB_NAMESPACE")
+            .expect("FATAL: SURREALDB_NAMESPACE environment variable is not set. Please configure it in your .env file.");
+        let db_name = env::var("SURREALDB_DATABASE")
+            .expect("FATAL: SURREALDB_DATABASE environment variable is not set. Please configure it in your .env file.");
+        let username = env::var("SURREALDB_USER")
+            .expect("FATAL: SURREALDB_USER environment variable is not set. Please configure it in your .env file.");
+        let password = env::var("SURREALDB_PASS")
+            .expect("FATAL: SURREALDB_PASS environment variable is not set. Please configure it in your .env file.");
+
+        info!("SurrealDB: environment variables loaded successfully");
+
+        // Connect to the cloud database
+        info!("SurrealDB: attempting connection to cloud instance");
+        let db = any::connect(&host).await.map_err(|e| {
+            error!("SurrealDB: FAILED to connect to cloud instance: {:?}", e);
+            e
+        })?;
+        info!("SurrealDB: ✓ connection established");
+
+        // Authenticate
+        info!(
+            "SurrealDB: attempting authentication as user '{}'",
+            username
+        );
+        db.signin(Root {
+            username: &username,
+            password: &password,
+        })
+        .await
+        .map_err(|e| {
+            error!("SurrealDB: FAILED to authenticate: {:?}", e);
+            e
+        })?;
+        info!("SurrealDB: ✓ authentication successful");
+
+        // Select namespace and database
+        info!(
+            "SurrealDB: selecting namespace '{}' and database '{}'",
+            namespace, db_name
+        );
+        db.use_ns(&namespace).use_db(&db_name).await.map_err(|e| {
+            error!("SurrealDB: FAILED to select namespace/database: {:?}", e);
+            e
+        })?;
+        info!("SurrealDB: ✓ namespace and database selected successfully");
+
+        info!("SurrealDB: ✓ fully connected to {}/{}", namespace, db_name);
+
         Ok(Database {
-            client,
+            client: db,
             namespace,
             db_name,
         })
@@ -88,7 +126,12 @@ impl Database {
     pub async fn find_user_by_email(&self, email: &str) -> Option<User> {
         debug!("SurrealDB: find_user_by_email {}", email);
         let sql = "SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1";
-        match self.client.query(sql).bind(("email", email)).await {
+        match self
+            .client
+            .query(sql)
+            .bind(("email", email.to_owned()))
+            .await
+        {
             Ok(mut resp) => {
                 let out = resp.take::<Option<User>>(0).ok().flatten();
                 if out.is_some() {

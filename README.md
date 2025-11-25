@@ -31,7 +31,7 @@ src/
 ### Requirements
 
 - Rust 1.70+
-- SurrealDB (can run locally or in a container)
+- SurrealDB Cloud account OR local SurrealDB instance
 
 ### Installation
 
@@ -42,28 +42,90 @@ src/
    ```
 
 2. Configure environment variables (create a `.env` file):
+
+   **For Production/Development (SurrealDB Cloud):**
    ```env
    # Server
    SERVER_HOST=127.0.0.1
    SERVER_PORT=8080
    
-   # Database
-   DATABASE_URL=ws://localhost:8000
-   DATABASE_NS=chasqui
-   DATABASE_DB=chasqui
+   # SurrealDB Cloud
+   SURREALDB_HOST=wss://your-instance.aws-use1.surreal.cloud
+   SURREALDB_USER=your_username
+   SURREALDB_PASS=your_password
+   SURREALDB_NAMESPACE=production
+   SURREALDB_DATABASE=chasqui
    
    # Authentication
-   JWT_SECRET=your_very_secure_secret_key
-   JWT_EXPIRATION=86400  # seconds (24 hours)
+   SECRET_KEY=your_very_secure_secret_key
    
    # Logging
-   RUST_LOG=info
+   RUST_LOG=info,actix_web=info
+   ```
+
+   **For Local Development:**
+   ```env
+   # SurrealDB Local
+   SURREALDB_HOST=ws://127.0.0.1:8002
+   SURREALDB_USER=root
+   SURREALDB_PASS=root
+   SURREALDB_NAMESPACE=surreal
+   SURREALDB_DATABASE=task
    ```
 
 3. Run the server:
    ```bash
    cargo run
    ```
+
+## 🗄️ Database Configuration
+
+### Production/Development (Cloud)
+
+The project is configured to use SurrealDB Cloud by default. The connection uses `surrealdb::engine::any::connect` which supports both WebSocket (`ws://`) and secure WebSocket (`wss://`) protocols.
+
+**Environment Variables:**
+- `SURREALDB_HOST` - Your SurrealDB cloud endpoint (e.g., `wss://your-instance.aws-use1.surreal.cloud`)
+- `SURREALDB_USER` - Database username
+- `SURREALDB_PASS` - Database password
+- `SURREALDB_NAMESPACE` - Namespace to use
+- `SURREALDB_DATABASE` - Database name
+
+### Local Development
+
+For local development, you can run SurrealDB locally:
+
+```bash
+# Start local SurrealDB
+surreal start --bind 127.0.0.1:8002 --user root --pass root
+
+# Update .env to use local connection
+SURREALDB_HOST=ws://127.0.0.1:8002
+```
+
+### Testing
+
+Tests use a **separate configuration** with `TEST_` prefixed environment variables to avoid interfering with production/development databases:
+
+```env
+TEST_SURREALDB_HOST=ws://127.0.0.1:8002
+TEST_SURREALDB_USER=root
+TEST_SURREALDB_PASS=root
+TEST_SURREALDB_NAMESPACE=test_surreal
+TEST_SURREALDB_DATABASE=test_task
+```
+
+To run tests:
+```bash
+# Start local SurrealDB for tests
+surreal start --bind 127.0.0.1:8002 --user root --pass root
+
+# Run tests
+cargo test
+
+# Run integration tests (requires running SurrealDB)
+cargo test -- --ignored
+```
 
 ## 🔒 Authentication
 

@@ -11,16 +11,16 @@
 //! - Deserializa directamente a Option<User> con `response.take::<Option<User>>(0)`.
 //! - Las funciones son asíncronas y retornan resultados envueltos en Option.
 
-use crate::models::entities::user::User;
 use crate::infrastructure::database::surrealdb::Database;
+use crate::models::entities::user::User;
 use async_trait::async_trait;
-use log::{info, debug, warn, error}; // añadido
+use log::{debug, error, info, warn}; // añadido
 
 /// Defines the interface for user-related database operations
 #[async_trait(?Send)]
 pub trait UserDataTrait {
     /// Adds a new user to the database. Returns Some(User) on success, None on error.
-    /// 
+    ///
     /// # Arguments
     /// * `new_user` - The user to be added
     ///
@@ -29,7 +29,7 @@ pub trait UserDataTrait {
     async fn add_user(&self, new_user: User) -> Option<User>;
 
     /// Finds a user by username. Returns a single user (LIMIT 1) with defined(password).
-    /// 
+    ///
     /// # Arguments
     /// * `username` - The username to search for
     ///
@@ -38,7 +38,7 @@ pub trait UserDataTrait {
     async fn find_user_by_username(&self, username: &str) -> Option<User>;
 
     /// Finds a user by email. Returns a single user (LIMIT 1) with defined(password).
-    /// 
+    ///
     /// # Arguments
     /// * `email` - The email to search for
     ///
@@ -57,7 +57,7 @@ impl UserDataTrait for Database {
         let created_users = self
             .client
             .create("user") // Create in 'user' table
-            .content(&new_user) // Set the record content
+            .content(new_user) // Set the record content
             .await;
 
         // Handle the database response
@@ -84,7 +84,7 @@ impl UserDataTrait for Database {
         let result = self
             .client
             .query("SELECT * FROM user WHERE username = $username AND password != NONE LIMIT 1")
-            .bind(("username", username))
+            .bind(("username", username.to_owned()))
             .await;
 
         // Process the query result
@@ -97,7 +97,7 @@ impl UserDataTrait for Database {
                         debug!("DB find_user_by_username: not found");
                     }
                     user_opt
-                },
+                }
                 Err(e) => {
                     error!("DB find_user_by_username deserialization error: {:?}", e);
                     None
@@ -116,7 +116,7 @@ impl UserDataTrait for Database {
         let result = self
             .client
             .query("SELECT * FROM user WHERE email = $email AND password != NONE LIMIT 1")
-            .bind(("email", email))
+            .bind(("email", email.to_owned()))
             .await;
 
         // Process the query result
@@ -129,7 +129,7 @@ impl UserDataTrait for Database {
                         debug!("DB find_user_by_email: not found");
                     }
                     user_opt
-                },
+                }
                 Err(e) => {
                     error!("DB find_user_by_email deserialization error: {:?}", e);
                     None
