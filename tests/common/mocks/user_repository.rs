@@ -2,14 +2,25 @@ use async_trait::async_trait;
 use mockall::automock;
 use actix_crud::models::entities::user::User;
 use actix_crud::models::entities::role::Role;
+use std::fmt;
 
-#[derive(Debug, thiserror::Error)]
-pub enum MockError {
-    #[error("Mock error: {0}")]
-    Error(String),
+#[derive(Debug)]
+pub struct MockError(String);
+
+impl std::error::Error for MockError {}
+
+impl fmt::Display for MockError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "Mock error: {}", self.0)
+    }
 }
 
-// El automock genera un struct MockUserRepository que implementa este trait
+impl From<String> for MockError {
+    fn from(err: String) -> Self {
+        MockError(err)
+    }
+}
+
 #[automock]
 #[async_trait]
 pub trait UserRepository: Send + Sync {
