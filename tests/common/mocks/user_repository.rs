@@ -1,7 +1,7 @@
+use actix_crud::models::entities::role::Role;
+use actix_crud::models::entities::user::User;
 use async_trait::async_trait;
 use mockall::automock;
-use actix_crud::models::entities::user::User;
-use actix_crud::models::entities::role::Role;
 use std::fmt;
 
 #[derive(Debug)]
