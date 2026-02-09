@@ -24,5 +24,7 @@ pub mod entities;
 pub mod traits;
 
 // Re-export commonly used types
+pub use entities::conversation::{Conversation, ConversationType};
+pub use entities::message::{Message, MessageType};
 pub use entities::task::Task;
 pub use entities::user::User;
