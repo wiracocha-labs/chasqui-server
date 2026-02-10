@@ -7,6 +7,13 @@ use actix_crud::interfaces::api::routes;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use std::env;
+use std::sync::Arc;
+
+use actix_crud::application::services::conversation_service::ConversationService;
+use actix_crud::application::services::message_service::MessageService;
+use actix_crud::infrastructure::database::repositories::surreal_conversation::SurrealConversationRepository;
+use actix_crud::infrastructure::database::repositories::surreal_message::SurrealMessageRepository;
+use actix_crud::infrastructure::websocket::chat_server::ChatServer;
 
 /// Main application entry point
 /// Initializes the following components:
@@ -31,12 +38,27 @@ async fn main() -> std::io::Result<()> {
     println!("Database connection established.");
 
     // Wrap database connection in web::Data for thread-safe sharing
-    // This allows the connection to be used across different request handlers
-    let db_data = web::Data::new(db);
+    let db_data = web::Data::new(db.clone());
 
-    // Initialize ChatServer actor for WebSockets
-    let chat_server = actix_crud::infrastructure::websocket::chat_server::ChatServer::new().start();
+    // Initialize repositories
+    let message_repo = Arc::new(SurrealMessageRepository::new(db.clone()));
+    let conversation_repo = Arc::new(SurrealConversationRepository::new(db.clone()));
+
+    // Initialize services
+    let message_service = Arc::new(MessageService::new(
+        message_repo.clone(),
+        conversation_repo.clone(),
+    ));
+    let conversation_service = Arc::new(ConversationService::new(conversation_repo.clone()));
+
+    // Initialize ChatServer actor for WebSockets with injected services
+    let chat_server =
+        ChatServer::new(message_service.clone(), conversation_service.clone()).start();
     let chat_server_data = web::Data::new(chat_server);
+
+    // Prepare web::Data for services to fix extractor issues
+    let message_service_data = web::Data::from(message_service.clone());
+    let conversation_service_data = web::Data::from(conversation_service.clone());
 
     println!("Starting the HTTP server...");
     // Configure and launch HTTP server
@@ -45,6 +67,8 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default()) // Enable request logging
             .app_data(db_data.clone()) // Share database connection
             .app_data(chat_server_data.clone()) // Share chat server actor
+            .app_data(message_service_data.clone()) // Share message service
+            .app_data(conversation_service_data.clone()) // Share conversation service
             .configure(routes::config) // Setup API routes
     })
     .bind({

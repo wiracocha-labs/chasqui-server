@@ -48,6 +48,19 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .route(
                 "/ws/chat",
                 web::get().to(crate::interfaces::api::chat_handlers::chat_ws),
+            )
+            // REST endpoints for chat
+            .route(
+                "/conversations",
+                web::post().to(crate::interfaces::api::chat_handlers::create_conversation),
+            )
+            .route(
+                "/conversations",
+                web::get().to(crate::interfaces::api::chat_handlers::get_conversations),
+            )
+            .route(
+                "/conversations/{id}/messages",
+                web::get().to(crate::interfaces::api::chat_handlers::get_messages),
             ),
     );
 }

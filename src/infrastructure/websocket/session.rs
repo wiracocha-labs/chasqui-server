@@ -161,9 +161,17 @@ impl StreamHandler<Result<ws::Message, ws::ProtocolError>> for WsSession {
                                     }
                                 }
                                 "message" => {
-                                    // Handle sending message
-                                    // This will be implemented with the repository layer
-                                    debug!("Message sending not yet implemented");
+                                    if let (Some(conv_id), Some(content)) = (
+                                        json.get("conversation_id").and_then(|v| v.as_str()),
+                                        json.get("content").and_then(|v| v.as_str()),
+                                    ) {
+                                        self.server.do_send(super::chat_server::SendMessage {
+                                            session_id: self.id,
+                                            conversation_id: conv_id.to_string(),
+                                            message: content.to_string(),
+                                            sender_id: self.user_id.clone(),
+                                        });
+                                    }
                                 }
                                 _ => {
                                     error!("Unknown message type: {}", msg_type);

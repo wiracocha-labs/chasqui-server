@@ -10,8 +10,8 @@
 //! - Ajusta BCRYPT_COST para controlar el “work factor” del hash.
 //!
 use bcrypt::{hash, verify, DEFAULT_COST};
-use jsonwebtoken::{encode, EncodingKey, Header};
 use jsonwebtoken::errors::{Error, ErrorKind};
+use jsonwebtoken::{encode, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use std::env;
 use std::time::{SystemTime, UNIX_EPOCH};
@@ -25,24 +25,24 @@ use std::time::{SystemTime, UNIX_EPOCH};
 /// - `username`: Username of the user.
 /// - `roles`: List of roles.
 #[derive(Debug, Serialize, Deserialize)]
-struct Claims {
-    sub: String,
-    exp: usize,
-    iat: usize,
-    username: String,
-    roles: Vec<String>,
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+    pub iat: usize,
+    pub username: String,
+    pub roles: Vec<String>,
 }
 
 /// Hash a plaintext password using `bcrypt`.
 ///
 /// Returns the password hash on success.
 pub fn hash_password(password: &str) -> Result<String, bcrypt::BcryptError> {
-	// Permitir configurar el coste via BCRYPT_COST, sino usar DEFAULT_COST
-	let cost = env::var("BCRYPT_COST")
-		.ok()
-		.and_then(|v| v.parse::<u32>().ok())
-		.unwrap_or(DEFAULT_COST);
-	hash(password, cost)
+    // Permitir configurar el coste via BCRYPT_COST, sino usar DEFAULT_COST
+    let cost = env::var("BCRYPT_COST")
+        .ok()
+        .and_then(|v| v.parse::<u32>().ok())
+        .unwrap_or(DEFAULT_COST);
+    hash(password, cost)
 }
 
 /// Verify a plaintext password against a previously stored `bcrypt` hash.
@@ -87,5 +87,21 @@ pub fn generate_token(user_id: &str, username: &str, roles: &[String]) -> Result
         roles: roles.to_vec(),
     };
 
-    encode(&Header::default(), &claims, &EncodingKey::from_secret(secret.as_bytes()))
+    encode(
+        &Header::default(),
+        &claims,
+        &EncodingKey::from_secret(secret.as_bytes()),
+    )
+}
+
+/// Validate and decode a signed JWT.
+///
+/// Returns the claims if the token is valid, otherwise returns an error.
+pub fn validate_token(token: &str) -> Result<Claims, Error> {
+    let secret = env::var("SECRET_KEY").map_err(|_| Error::from(ErrorKind::InvalidToken))?;
+    let decoding_key = DecodingKey::from_secret(secret.as_bytes());
+    let validation = Validation::default();
+
+    let token_data = jsonwebtoken::decode::<Claims>(token, &decoding_key, &validation)?;
+    Ok(token_data.claims)
 }

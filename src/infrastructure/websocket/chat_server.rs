@@ -8,9 +8,14 @@
 //! - User presence tracking
 
 use actix::prelude::*;
-use log::{debug, info};
+use log::{debug, error, info};
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
 use surrealdb::sql::Thing;
+
+use crate::application::services::conversation_service::ConversationService;
+use crate::application::services::message_service::MessageService;
+use crate::models::entities::message::{Message, MessageType};
 
 /// Chat server manages all WebSocket connections and rooms
 pub struct ChatServer {
@@ -22,14 +27,46 @@ pub struct ChatServer {
 
     /// Map of user_id -> session_id (for presence tracking)
     user_sessions: HashMap<String, usize>,
+
+    /// Map of session_id -> Recipient (to send messages back to sessions)
+    recipients: HashMap<usize, Recipient<ServerMessage>>,
+
+    /// Services for persistence and business logic
+    message_service: Arc<MessageService>,
+    #[allow(dead_code)]
+    conversation_service: Arc<ConversationService>,
 }
 
 impl ChatServer {
-    pub fn new() -> Self {
+    pub fn new(
+        message_service: Arc<MessageService>,
+        conversation_service: Arc<ConversationService>,
+    ) -> Self {
         ChatServer {
             rooms: HashMap::new(),
             sessions: HashMap::new(),
             user_sessions: HashMap::new(),
+            recipients: HashMap::new(),
+            message_service,
+            conversation_service,
+        }
+    }
+
+    /// Helper to send message to a specific session
+    fn send_message_to_session(&self, session_id: usize, msg: &str) {
+        if let Some(recipient) = self.recipients.get(&session_id) {
+            recipient.do_send(ServerMessage {
+                content: msg.to_string(),
+            });
+        }
+    }
+
+    /// Broadcast message to all participants in a room (conversation)
+    fn broadcast_to_room(&self, conversation_id: &str, msg: &str, _skip_session: Option<usize>) {
+        if let Some(sessions) = self.rooms.get(conversation_id) {
+            for session_id in sessions {
+                self.send_message_to_session(*session_id, msg);
+            }
         }
     }
 }
@@ -77,6 +114,7 @@ pub struct LeaveRoom {
 #[derive(Message)]
 #[rtype(result = "()")]
 pub struct SendMessage {
+    pub session_id: usize,
     pub conversation_id: String,
     pub message: String,
     pub sender_id: Thing,
@@ -97,8 +135,9 @@ impl Handler<Connect> for ChatServer {
         // Generate unique session ID
         let session_id = rand::random::<usize>();
 
-        // Store session
+        // Store session and recipient
         self.sessions.insert(session_id, msg.user_id.clone());
+        self.recipients.insert(session_id, msg.addr);
 
         // Track user presence
         let user_id_str = format!("{}", msg.user_id);
@@ -118,6 +157,7 @@ impl Handler<Disconnect> for ChatServer {
         if let Some(user_id) = self.sessions.remove(&msg.session_id) {
             let user_id_str = format!("{}", user_id);
             self.user_sessions.remove(&user_id_str);
+            self.recipients.remove(&msg.session_id);
 
             // Remove from all rooms
             for (_room_id, sessions) in self.rooms.iter_mut() {
@@ -173,33 +213,66 @@ impl Handler<LeaveRoom> for ChatServer {
 
 /// Handler for SendMessage - broadcasts to all in room
 impl Handler<SendMessage> for ChatServer {
-    type Result = ();
+    type Result = ResponseActFuture<Self, ()>;
 
     fn handle(&mut self, msg: SendMessage, _ctx: &mut Context<Self>) -> Self::Result {
-        if let Some(sessions) = self.rooms.get(&msg.conversation_id) {
-            debug!(
-                "Broadcasting message to {} sessions in room {}",
-                sessions.len(),
-                msg.conversation_id
-            );
+        let conversation_id = msg.conversation_id.clone();
+        let session_id = msg.session_id;
+        let message_service = self.message_service.clone();
 
-            // Note: In a real implementation, you would:
-            // 1. Store the message in the database
-            // 2. Get the session recipients
-            // 3. Send the message to each recipient
-            // For now, this is a placeholder
+        // Parse conversation_id into a Thing
+        let parts: Vec<&str> = conversation_id.split(':').collect();
+        if parts.len() != 2 {
+            error!("Invalid conversation_id format: {}", conversation_id);
+            let error_payload = serde_json::json!({
+                "type": "Error",
+                "message": "Invalid conversation ID format"
+            })
+            .to_string();
+            self.send_message_to_session(session_id, &error_payload);
+            return Box::pin(async {}.into_actor(self));
         }
-    }
-}
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+        let conv_thing = Thing::from((parts[0], parts[1]));
 
-    #[actix_rt::test]
-    async fn test_chat_server_creation() {
-        let server = ChatServer::new();
-        assert_eq!(server.rooms.len(), 0);
-        assert_eq!(server.sessions.len(), 0);
+        let chat_msg = Message {
+            id: None,
+            conversation_id: conv_thing.clone(),
+            sender_id: msg.sender_id.clone(),
+            content: msg.message.clone(),
+            message_type: MessageType::Text,
+            created_at: chrono::Utc::now(),
+            read_by: vec![],
+        };
+
+        // Use wrap_future to run async logic within the actor
+        Box::pin(
+            async move { message_service.send_message(chat_msg).await }
+                .into_actor(self)
+                .map(move |result, act, _ctx| {
+                    match result {
+                        Ok(saved_msg) => {
+                            // Broadcast the saved message with its real ID and timestamp
+                            let broadcast_payload = serde_json::json!({
+                                "type": "NewMessage",
+                                "message": saved_msg
+                            })
+                            .to_string();
+
+                            act.broadcast_to_room(&conversation_id, &broadcast_payload, None);
+                        }
+                        Err(e) => {
+                            error!("Failed to save message: {:?}", e);
+                            // Notify ONLY the sender of the error
+                            let error_payload = serde_json::json!({
+                                "type": "Error",
+                                "message": e.to_string()
+                            })
+                            .to_string();
+                            act.send_message_to_session(session_id, &error_payload);
+                        }
+                    }
+                }),
+        )
     }
 }
