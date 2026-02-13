@@ -52,6 +52,17 @@ cp .env.example .env
 cargo run
 ```
 
+### 4. Interactive Documentation
+Chasqui Server includes built-in documentation for its API and WebSockets:
+
+```bash
+# List all REST API endpoints and JSON schemas
+cargo run -- --list-api
+
+# List all WebSocket message types and structures
+cargo run -- --list-ws
+```
+
 ---
 
 ## 📊 Project Status & Roadmap

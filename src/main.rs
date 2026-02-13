@@ -30,6 +30,18 @@ async fn main() -> std::io::Result<()> {
 
     println!("Starting the application...");
 
+    // Check for --list-api argument
+    if std::env::args().any(|arg| arg == "--list-api") {
+        actix_crud::interfaces::api::api_doc::print_routes();
+        return Ok(());
+    }
+
+    // Check for --list-ws argument
+    if std::env::args().any(|arg| arg == "--list-ws") {
+        actix_crud::interfaces::api::api_doc::print_ws_docs();
+        return Ok(());
+    }
+
     // Initialize database connection
     // This creates a new SurrealDB instance with configured credentials
     let db = Database::init()
