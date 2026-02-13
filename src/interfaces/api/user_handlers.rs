@@ -26,13 +26,13 @@
 //! Seguridad:
 //! - Password con bcrypt y coste configurable (BCRYPT_COST).
 
-use actix_web::{web, HttpResponse, Responder};
-use serde::{Deserialize, Serialize};
-use crate::models::entities::user::User;
-use crate::infrastructure::auth::jwt::{verify_password, generate_token};
+use crate::infrastructure::auth::jwt::{generate_token, verify_password};
 use crate::infrastructure::database::surrealdb::Database;
+use crate::models::entities::user::User;
 use crate::models::traits::user_data_trait::UserDataTrait;
-use log::{info, debug, warn, error};
+use actix_web::{web, HttpResponse, Responder};
+use log::{debug, error, info, warn};
+use serde::{Deserialize, Serialize};
 
 /// Request payload for user registration
 #[derive(Deserialize)]
@@ -75,7 +75,7 @@ struct RegistrationResponse {
 }
 
 /// Handles user registration requests
-/// 
+///
 /// # Arguments
 /// * `user_data` - JSON payload containing username and password
 /// * `db` - Database connection
@@ -83,8 +83,14 @@ struct RegistrationResponse {
 /// # Returns
 /// - 200 OK if registration successful
 /// - 500 Internal Server Error if registration fails
-pub async fn register(user_data: web::Json<RegisterRequest>, db: web::Data<Database>) -> impl Responder {
-    info!("Register attempt: username={}, email={}", user_data.username, user_data.email);
+pub async fn register(
+    user_data: web::Json<RegisterRequest>,
+    db: web::Data<Database>,
+) -> impl Responder {
+    info!(
+        "Register attempt: username={}, email={}",
+        user_data.username, user_data.email
+    );
 
     // Validate username: only alphabetic letters allowed
     if !user_data.username.chars().all(|c| c.is_alphabetic()) {
@@ -107,7 +113,7 @@ pub async fn register(user_data: web::Json<RegisterRequest>, db: web::Data<Datab
         Ok(user) => {
             debug!("User::new OK for username={}", user_data.username);
             user
-        },
+        }
         Err(e) => {
             error!("Register failed hashing password: {}", e);
             return HttpResponse::InternalServerError().body(format!("internal error: {}", e));
@@ -122,16 +128,19 @@ pub async fn register(user_data: web::Json<RegisterRequest>, db: web::Data<Datab
                 create: "success".to_string(),
                 message: "User created successfully".to_string(),
             })
-        },
+        }
         None => {
-            error!("Register failed persisting user: username={}", user_data.username);
+            error!(
+                "Register failed persisting user: username={}",
+                user_data.username
+            );
             HttpResponse::InternalServerError().finish()
-        },
+        }
     }
 }
 
 /// Handles user login requests
-/// 
+///
 /// # Arguments
 /// * `user_data` - JSON payload containing username and password
 /// * `db` - Database connection
@@ -165,7 +174,10 @@ pub async fn login(user_data: web::Json<LoginRequest>, db: web::Data<Database>) 
     };
     if user.is_none() {
         if let Some(u) = username {
-            debug!("Email lookup failed or empty; falling back to username lookup: {}", u);
+            debug!(
+                "Email lookup failed or empty; falling back to username lookup: {}",
+                u
+            );
             user = <Database as UserDataTrait>::find_user_by_username(&db, u).await;
         }
     }
@@ -185,7 +197,10 @@ pub async fn login(user_data: web::Json<LoginRequest>, db: web::Data<Database>) 
     let stored_hash = match user.password.as_deref() {
         Some(h) => h,
         None => {
-            warn!("User has no password hash (legacy row). username={}", user.username);
+            warn!(
+                "User has no password hash (legacy row). username={}",
+                user.username
+            );
             return HttpResponse::Unauthorized().finish();
         }
     };
@@ -193,21 +208,28 @@ pub async fn login(user_data: web::Json<LoginRequest>, db: web::Data<Database>) 
     let pass_ok = verify_password(&user_data.password, stored_hash);
     debug!("Password verification result: {}", pass_ok);
     if !pass_ok {
-        warn!("Password verification failed for username={}", user.username);
+        warn!(
+            "Password verification failed for username={}",
+            user.username
+        );
         return HttpResponse::Unauthorized().finish();
     }
 
     // Roles por defecto (hasta tener roles persistidos)
     let roles = vec!["user".to_string()];
 
-    // Extraer UUID desde Thing ("user:<uuid>" -> "<uuid>")
+    // Extraer ID puro desde Thing (evitando los brackets ⟨ ⟩ de SurrealDB)
     let user_id_str = match &user.id {
-        Some(thing) => {
-            let s = thing.to_string(); // e.g., "user:783a9b75-41c2-47af-97f8-438bc623d505"
-            let uuid = s.split_once(':').map(|(_, uuid)| uuid.to_string()).unwrap_or(s);
-            debug!("Extracted user_id for JWT: {}", uuid);
-            uuid
-        }
+        Some(thing) => match &thing.id {
+            surrealdb::sql::Id::String(s) => s.clone(),
+            surrealdb::sql::Id::Uuid(u) => u.to_string(),
+            _ => thing
+                .id
+                .to_string()
+                .trim_matches('⟨')
+                .trim_matches('⟩')
+                .to_string(),
+        },
         None => {
             error!("User has no id Thing set");
             return HttpResponse::InternalServerError().finish();

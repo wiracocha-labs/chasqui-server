@@ -7,10 +7,12 @@
 //! - `task`: Task entity definitions and related types
 //! - `user`: User entity definitions and related types
 //! - `role`: Role entity definitions and related types
+//! - `message`: Message entity for chat functionality
+//! - `conversation`: Conversation entity for chat functionality
 //!
 //! # Usage
 //! ```rust,ignore
-//! use actix_crud::models::entities::{task, user, role};
+//! use actix_crud::models::entities::{task, user, role, message, conversation};
 //! ```
 //!
 //! The entities module is designed to:
@@ -19,6 +21,8 @@
 //! - Provide data structures
 //! - Define entity validation rules
 
+pub mod conversation;
+pub mod message;
+pub mod role;
 pub mod task;
 pub mod user;
-pub mod role;

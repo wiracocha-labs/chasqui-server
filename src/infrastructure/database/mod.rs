@@ -17,4 +17,5 @@
 //! - Provide transaction support
 //! - Enable database configuration
 
+pub mod repositories;
 pub mod surrealdb;

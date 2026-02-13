@@ -19,6 +19,8 @@
 //! - Implement resource handlers
 //! - Manage API routing logic
 
+pub mod api_doc;
+pub mod chat_handlers;
 pub mod routes;
 pub mod task_handlers;
 pub mod user_handlers;

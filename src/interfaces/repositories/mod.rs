@@ -18,3 +18,5 @@
 //! - Implement CRUD operations
 //! - Manage entity persistence
 //! - Handle data relationships
+pub mod conversation;
+pub mod message;

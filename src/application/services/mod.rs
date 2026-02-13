@@ -17,4 +17,6 @@
 //! - Execute core application logic
 //! - Handle service-level operations
 
+pub mod conversation_service;
 pub mod data_trait_executor;
+pub mod message_service;
