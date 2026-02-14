@@ -75,7 +75,14 @@ async fn main() -> std::io::Result<()> {
     println!("Starting the HTTP server...");
     // Configure and launch HTTP server
     HttpServer::new(move || {
+        let cors = actix_cors::Cors::default()
+            .allow_any_origin() // Permitir cualquier origen por ahora (ideal para desarrollo)
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(cors) // Enable CORS
             .wrap(Logger::default()) // Enable request logging
             .app_data(db_data.clone()) // Share database connection
             .app_data(chat_server_data.clone()) // Share chat server actor
