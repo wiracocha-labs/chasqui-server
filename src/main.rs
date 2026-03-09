@@ -92,9 +92,12 @@ async fn main() -> std::io::Result<()> {
     })
     .bind({
         // Read server configuration from environment variables
-        // with fallback to default values
+        // with fallback to default values.
+        // PORT is the standard variable used by Fly.io and Railway.
         let host = env::var("SERVER_HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-        let port = env::var("SERVER_PORT").unwrap_or_else(|_| "8080".to_string());
+        let port = env::var("SERVER_PORT")
+            .or_else(|_| env::var("PORT"))
+            .unwrap_or_else(|_| "8080".to_string());
         format!("{}:{}", host, port)
     })?
     .run()

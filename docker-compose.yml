@@ -1,0 +1,20 @@
+services:
+  surrealdb:
+    image: surrealdb/surrealdb:latest
+    ports:
+      - "8000:8000"
+    command: start --user root --pass root memory
+
+  app:
+    build: .
+    ports:
+      - "${SERVER_PORT:-8080}:${SERVER_PORT:-8080}"
+    env_file:
+      - .env
+    environment:
+      - DATABASE_URL=http://surrealdb:8000
+      - DATABASE_USER=root
+      - DATABASE_PASS=root
+      - SERVER_HOST=0.0.0.0
+    depends_on:
+      - surrealdb

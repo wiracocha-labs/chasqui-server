@@ -3,12 +3,10 @@
 Estas son las reglas de oro y decisiones arquitectónicas que deben seguirse para mantener la consistencia del proyecto.
 
 ## 🛠️ Protocolo de Interacción (CRÍTICO)
+*   **Sistema de Skills:** Antes de realizar tareas complejas (como añadir endpoints o migrar lógica), busca si existe una guía detallada en `.agent/skills/<tarea>/SKILL.md` y síguela estrictamente.
 *   **Análisis Previo:** ANTES de editar cualquier archivo, el agente debe realizar un análisis exhaustivo del código afectado.
-*   **Comunicación:** El agente debe reportar primero:
-    1.  Posibles bugs o errores encontrados.
-    2.  Oportunidades de mejora o refactorización.
-    3.  Impacto del cambio propuesto.
-*   **Aprobación:** Solo se debe proceder con la edición del código una vez que el usuario haya validado el análisis y la propuesta.
+*   **Comunicación:** El agente debe reportar primero bugs, mejoras e impacto esperado.
+*   **Aprobación:** Solo se debe proceder una vez que el usuario haya validado la propuesta.
 
 ## 🔑 Gestión de Identidades (IDs)
 *   **Formato de IDs:** Usamos `surrealdb::sql::Thing`. Sin embargo, al exponer IDs en JWT o APIs externas, se deben extraer como **UUIDs limpios** (sin los brackets `⟨ ⟩` de SurrealDB).
