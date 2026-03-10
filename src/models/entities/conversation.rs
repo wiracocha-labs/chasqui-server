@@ -16,13 +16,41 @@ use surrealdb::sql::Thing;
 use uuid::Uuid;
 
 /// Type of conversation
-#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ConversationType {
     /// Direct 1-to-1 conversation
     Direct,
     /// Group conversation with multiple participants
     Group,
+}
+
+// Implement Serialize producing lowercase strings ("direct" / "group")
+impl serde::Serialize for ConversationType {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let s = match self {
+            ConversationType::Direct => "direct",
+            ConversationType::Group => "group",
+        };
+        serializer.serialize_str(s)
+    }
+}
+
+// Implement Deserialize accepting case-insensitive variants like "Direct", "direct", "DIRECT"
+impl<'de> serde::Deserialize<'de> for ConversationType {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        match s.to_lowercase().as_str() {
+            "direct" => Ok(ConversationType::Direct),
+            "group" => Ok(ConversationType::Group),
+            other => Err(serde::de::Error::unknown_variant(other, &["direct", "group"])),
+        }
+    }
 }
 
 /// Represents a chat conversation
@@ -162,15 +190,15 @@ mod tests {
         let user1 = Thing::from(("user", "user1"));
         let user2 = Thing::from(("user", "user2"));
 
-        let conv = Conversation::new_direct(user1.clone(), user2.clone());
+    let conversation = Conversation::new_direct(user1.clone(), user2.clone());
 
-        assert!(conv.id.is_some());
-        assert_eq!(conv.conversation_type, ConversationType::Direct);
-        assert_eq!(conv.participants.len(), 2);
-        assert!(conv.has_participant(&user1));
-        assert!(conv.has_participant(&user2));
-        assert!(conv.name.is_none());
-        assert!(conv.is_valid());
+    assert!(conversation.id.is_some());
+    assert_eq!(conversation.conversation_type, ConversationType::Direct);
+    assert_eq!(conversation.participants.len(), 2);
+    assert!(conversation.has_participant(&user1));
+    assert!(conversation.has_participant(&user2));
+    assert!(conversation.name.is_none());
+    assert!(conversation.is_valid());
     }
 
     #[test]
@@ -182,13 +210,13 @@ mod tests {
         ];
         let name = Some("Test Group".to_string());
 
-        let conv = Conversation::new_group(users.clone(), name.clone());
+    let conversation = Conversation::new_group(users.clone(), name.clone());
 
-        assert!(conv.id.is_some());
-        assert_eq!(conv.conversation_type, ConversationType::Group);
-        assert_eq!(conv.participants.len(), 3);
-        assert_eq!(conv.name, name);
-        assert!(conv.is_valid());
+    assert!(conversation.id.is_some());
+    assert_eq!(conversation.conversation_type, ConversationType::Group);
+    assert_eq!(conversation.participants.len(), 3);
+    assert_eq!(conversation.name, name);
+    assert!(conversation.is_valid());
     }
 
     #[test]
@@ -197,22 +225,22 @@ mod tests {
         let user2 = Thing::from(("user", "user2"));
         let user3 = Thing::from(("user", "user3"));
 
-        let mut conv = Conversation::new_direct(user1.clone(), user2.clone());
+    let mut conversation = Conversation::new_direct(user1.clone(), user2.clone());
 
-        // Add new participant
-        assert!(conv.add_participant(user3.clone()));
-        assert_eq!(conv.participants.len(), 3);
+    // Add new participant
+    assert!(conversation.add_participant(user3.clone()));
+    assert_eq!(conversation.participants.len(), 3);
 
-        // Try to add duplicate
-        assert!(!conv.add_participant(user3.clone()));
-        assert_eq!(conv.participants.len(), 3);
+    // Try to add duplicate
+    assert!(!conversation.add_participant(user3.clone()));
+    assert_eq!(conversation.participants.len(), 3);
 
-        // Remove participant
-        assert!(conv.remove_participant(&user3));
-        assert_eq!(conv.participants.len(), 2);
+    // Remove participant
+    assert!(conversation.remove_participant(&user3));
+    assert_eq!(conversation.participants.len(), 2);
 
-        // Try to remove non-existent
-        assert!(!conv.remove_participant(&user3));
+    // Try to remove non-existent
+    assert!(!conversation.remove_participant(&user3));
     }
 
     #[test]

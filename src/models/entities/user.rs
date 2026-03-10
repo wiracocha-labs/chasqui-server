@@ -10,17 +10,15 @@
 //! - No exponer el hash en respuestas públicas (usar DTO si es necesario).
 //! - Validar formato de email y unicidad en la creación de usuarios.
 
-
 use crate::infrastructure::auth::jwt::hash_password;
 use crate::models::entities::role::roles;
-use crate::models::entities::role::{Role, Permission};
-use serde::{Deserialize, Serialize};
+use crate::models::entities::role::{Permission, Role};
 use bcrypt::BcryptError;
+use log::debug;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use surrealdb::sql::Thing;
 use uuid::Uuid;
-use log::debug;
-use std::collections::HashSet;
-
 
 /// Represents a User in the system
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -36,6 +34,9 @@ pub struct User {
     /// Email address of the user (optional for compat with legacy rows)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    /// Wallet address of the user (optional)
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wallet: Option<String>,
     /// Roles del usuario
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub roles: Vec<Role>,
@@ -49,7 +50,10 @@ impl User {
     ///
     /// Returns hashing errors from bcrypt on failure.
     pub fn new(username: String, email: String, password: String) -> Result<Self, BcryptError> {
-        debug!("User::new creating user with username={} email={}", username, email);
+        debug!(
+            "User::new creating user with username={} email={}",
+            username, email
+        );
         // Hash the provided password (propagate bcrypt error)
         let hashed_password = hash_password(&password)?;
         let uuid = Uuid::new_v4().to_string();
@@ -59,6 +63,7 @@ impl User {
             username,
             password: Some(hashed_password),
             email: Some(email),
+            wallet: None,
             roles: Vec::new(),
         };
 
@@ -66,7 +71,34 @@ impl User {
 
         Ok(user)
     }
-    
+
+    /// Creates a new User from a wallet address for demo purposes.
+    /// Generates a unique username and defaults the password to None.
+    pub fn new_from_wallet(wallet: String) -> Self {
+        debug!("User::new_from_wallet creating user with wallet={}", wallet);
+        let uuid = Uuid::new_v4().to_string();
+        // Generar un username automático basado en la wallet (primeros 6 caracteres para legibilidad)
+        let short_wallet = if wallet.len() > 10 {
+            &wallet[0..6]
+        } else {
+            &wallet
+        };
+        let username = format!("wallet_{}_{}", short_wallet, &uuid[0..4]);
+
+        let mut user = User {
+            id: Some(Thing::from(("user", uuid.as_str()))),
+            username,
+            password: None,
+            email: None,
+            wallet: Some(wallet),
+            roles: Vec::new(),
+        };
+
+        user.add_role(roles::user());
+
+        user
+    }
+
     //--------- Roles Methods ---------
 
     pub fn has_role(&self, role_name: &str) -> bool {
@@ -74,13 +106,13 @@ impl User {
     }
 
     pub fn add_role(&mut self, role: Role) -> bool {
-            if !self.has_role(&role.name) {
-                self.roles.push(role);
-                true
-            } else {
-                false
-            }
+        if !self.has_role(&role.name) {
+            self.roles.push(role);
+            true
+        } else {
+            false
         }
+    }
 
     pub fn remove_role(&mut self, role_name: &str) -> bool {
         let original_len = self.roles.len();
@@ -99,7 +131,9 @@ impl User {
     }
 
     pub fn has_permission(&self, permission: Permission) -> bool {
-        self.roles.iter().any(|role| role.has_permission(permission))
+        self.roles
+            .iter()
+            .any(|role| role.has_permission(permission))
     }
 
     pub fn has_all_permissions(&self, permissions: &[Permission]) -> bool {
@@ -123,7 +157,4 @@ impl User {
     pub fn is_standard_user(&self) -> bool {
         self.has_role("user") && !self.is_admin() && !self.is_moderator()
     }
-
 }
-
-    

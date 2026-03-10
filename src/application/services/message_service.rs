@@ -37,8 +37,8 @@ impl MessageService {
             .await?;
 
         match conversation {
-            Some(conv) => {
-                if !conv.has_participant(&message.sender_id) {
+            Some(conversation) => {
+                if !conversation.has_participant(&message.sender_id) {
                     return Err(Error::Db(surrealdb::error::Db::Thrown(
                         "User is not a participant in this conversation".to_string(),
                     )));

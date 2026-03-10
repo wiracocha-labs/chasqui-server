@@ -73,12 +73,12 @@ impl Database {
         info!("SurrealDB: environment variables loaded successfully");
 
         // Connect to the cloud database
-        info!("SurrealDB: attempting connection to cloud instance");
+        info!("SurrealDB: attempting connection to {}", host);
         let db = any::connect(&host).await.map_err(|e| {
-            error!("SurrealDB: FAILED to connect to cloud instance: {:?}", e);
+            error!("SurrealDB: FAILED to connect to {}: {:?}", host, e);
             e
         })?;
-        info!("SurrealDB: ✓ connection established");
+        info!("SurrealDB: ✓ connection established to host");
 
         // Authenticate
         info!(
@@ -105,9 +105,11 @@ impl Database {
             error!("SurrealDB: FAILED to select namespace/database: {:?}", e);
             e
         })?;
-        info!("SurrealDB: ✓ namespace and database selected successfully");
 
-        info!("SurrealDB: ✓ fully connected to {}/{}", namespace, db_name);
+        info!(
+            "SurrealDB: ✓ fully connected and ready at {}/{}",
+            namespace, db_name
+        );
 
         Ok(Database {
             client: db,

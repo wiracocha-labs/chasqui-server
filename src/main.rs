@@ -75,8 +75,44 @@ async fn main() -> std::io::Result<()> {
     println!("Starting the HTTP server...");
     // Configure and launch HTTP server
     HttpServer::new(move || {
+        // Build CORS policy:
+        // - If ALLOWED_ORIGINS env var is set (comma-separated), only those origins are allowed.
+        // - Otherwise allow any localhost/127.0.0.1 origin (useful for local dev and ngrok previews).
+        // - Always allow methods/headers and set a reasonable max_age.
+        // Read optional env var with a comma-separated list of allowed origins (production)
+        let allowed_origins = env::var("ALLOWED_ORIGINS").ok();
+
+        // Simplified CORS policy: allow explicit dev origins, localhost variants,
+        // ngrok subdomains and common public TLDs used in previews (.io, .app).
+        // If ALLOWED_ORIGINS is set, only those exact origins are allowed.
         let cors = actix_cors::Cors::default()
-            .allow_any_origin() // Permitir cualquier origen por ahora (ideal para desarrollo)
+            .allowed_origin_fn(move |origin, _req_head| {
+                if let Ok(origin_str) = origin.to_str() {
+                    // If ALLOWED_ORIGINS provided, allow only exact matches from the list
+                    if let Some(ref list) = allowed_origins {
+                        return list.split(',').any(|o| o.trim() == origin_str);
+                    }
+
+                    // Allow common local dev origins (localhost / 127.0.0.1 with port)
+                    if origin_str.starts_with("http://127.0.0.1:")
+                        || origin_str.starts_with("http://localhost:")
+                        || origin_str.starts_with("https://localhost:")
+                    {
+                        return true;
+                    }
+
+                    // Allow ngrok public domains and common preview TLDs (.io, .app)
+                    if origin_str.ends_with(".ngrok.io")
+                        || origin_str.ends_with(".ngrok-free.app")
+                        || origin_str.ends_with(".ngrok.app")
+                        || origin_str.ends_with(".io")
+                        || origin_str.ends_with(".app")
+                    {
+                        return true;
+                    }
+                }
+                false
+            })
             .allow_any_method()
             .allow_any_header()
             .max_age(3600);

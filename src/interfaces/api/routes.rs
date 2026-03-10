@@ -61,6 +61,10 @@ pub fn config(cfg: &mut web::ServiceConfig) {
             .route(
                 "/conversations/{id}/messages",
                 web::get().to(crate::interfaces::api::chat_handlers::get_messages),
+            )
+            .route(
+                "/conversations/{id}/participants",
+                web::post().to(crate::interfaces::api::chat_handlers::add_participant),
             ),
     );
 }

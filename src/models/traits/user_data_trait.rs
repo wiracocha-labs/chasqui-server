@@ -45,6 +45,15 @@ pub trait UserDataTrait {
     /// # Returns
     /// * `Option<User>` - Some(user) if found, None if not found or error
     async fn find_user_by_email(&self, email: &str) -> Option<User>;
+
+    /// Finds a user by wallet address. Returns a single user (LIMIT 1).
+    ///
+    /// # Arguments
+    /// * `wallet` - The wallet address to search for
+    ///
+    /// # Returns
+    /// * `Option<User>` - Some(user) if found, None if not found or error
+    async fn find_user_by_wallet(&self, wallet: &str) -> Option<User>;
 }
 
 // Implementation of UserDataTrait for the Database struct
@@ -137,6 +146,38 @@ impl UserDataTrait for Database {
             },
             Err(e) => {
                 error!("DB find_user_by_email query error: {:?}", e);
+                None
+            }
+        }
+    }
+
+    // Find a user by their wallet address
+    async fn find_user_by_wallet(&self, wallet: &str) -> Option<User> {
+        debug!("DB find_user_by_wallet: {}", wallet);
+        let result = self
+            .client
+            .query("SELECT * FROM user WHERE wallet = $wallet LIMIT 1")
+            .bind(("wallet", wallet.to_owned()))
+            .await;
+
+        // Process the query result
+        match result {
+            Ok(mut response) => match response.take::<Option<User>>(0) {
+                Ok(user_opt) => {
+                    if user_opt.is_some() {
+                        debug!("DB find_user_by_wallet: found");
+                    } else {
+                        debug!("DB find_user_by_wallet: not found");
+                    }
+                    user_opt
+                }
+                Err(e) => {
+                    error!("DB find_user_by_wallet deserialization error: {:?}", e);
+                    None
+                }
+            },
+            Err(e) => {
+                error!("DB find_user_by_wallet query error: {:?}", e);
                 None
             }
         }

@@ -1,30 +1,44 @@
-# --- Build Stage ---
-FROM rust:latest as builder
+# 🐳 Dockerfile for Chasqui Server
 
-WORKDIR /usr/src/app
+# Stage 1: Build
+FROM rust:1.75-slim-bookworm AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y pkg-config libssl-dev && rm -rf /var/lib/apt/lists/*
+# Create a new empty shell project
+RUN USER=root cargo new --bin actix-crud
+WORKDIR /actix-crud
 
-# Copy source code and manifests
-COPY . .
+# Copy our manifests
+COPY ./Cargo.lock ./Cargo.lock
+COPY ./Cargo.toml ./Cargo.toml
+
+# This build step will cache our dependencies
+RUN cargo build --release
+RUN rm src/*.rs
+
+# Copy our source code
+COPY ./src ./src
 
 # Build for release
+# We touch the main file to ensure it's rebuilt
+RUN touch src/main.rs
 RUN cargo build --release
 
-# --- Runtime Stage ---
+# Stage 2: Run
 FROM debian:bookworm-slim
 
-WORKDIR /usr/local/bin
-
-# Install runtime dependencies (OpenSSL is needed for SurrealDB/Auth)
+# Install runtime dependencies (OpenSSL used by many crates)
 RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
-# Copy binary from builder
-COPY --from=builder /usr/src/app/target/release/actix-crud .
+# Copy the build artifact from the builder stage
+COPY --from=builder /actix-crud/target/release/actix-crud /usr/local/bin/chasqui-server
 
-# Expose the API port
+# Set environment variables
+ENV SERVER_HOST=0.0.0.0
+ENV SERVER_PORT=8080
+
+# Expose the port (Railway will provide a PORT at runtime)
 EXPOSE 8080
 
-# Run the binary
-CMD ["./actix-crud"]
+# At runtime forward Railway's PORT to SERVER_PORT (default to the Dockerfile value)
+# This ensures the app listens on the port Railway expects while keeping the default for local runs.
+CMD ["sh", "-c", "export SERVER_PORT=${PORT:-$SERVER_PORT}; exec /usr/local/bin/chasqui-server"]
