@@ -11,16 +11,10 @@ WORKDIR /chasqui-server
 COPY ./Cargo.lock ./Cargo.lock
 COPY ./Cargo.toml ./Cargo.toml
 
-# This build step will cache our dependencies
-RUN cargo build --release
-RUN rm src/*.rs
-
-# Copy our source code
+# Copy our source code first
 COPY ./src ./src
 
-# Build for release
-# We touch the main file to ensure it's rebuilt
-RUN touch src/main.rs
+# This build step will cache our dependencies and build
 RUN cargo build --release
 
 # Stage 2: Run
