@@ -2,18 +2,18 @@
 //! Initializes and runs the HTTP server with all necessary middleware and configurations.
 
 use actix::Actor;
-use actix_crud::infrastructure::database::surrealdb::Database;
-use actix_crud::interfaces::api::routes;
+use chasqui_server::infrastructure::database::surrealdb::Database;
+use chasqui_server::interfaces::api::routes;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use env_logger::Env;
 use std::env;
 use std::sync::Arc;
 
-use actix_crud::application::services::conversation_service::ConversationService;
-use actix_crud::application::services::message_service::MessageService;
-use actix_crud::infrastructure::database::repositories::surreal_conversation::SurrealConversationRepository;
-use actix_crud::infrastructure::database::repositories::surreal_message::SurrealMessageRepository;
-use actix_crud::infrastructure::websocket::chat_server::ChatServer;
+use chasqui_server::application::services::conversation_service::ConversationService;
+use chasqui_server::application::services::message_service::MessageService;
+use chasqui_server::infrastructure::database::repositories::surreal_conversation::SurrealConversationRepository;
+use chasqui_server::infrastructure::database::repositories::surreal_message::SurrealMessageRepository;
+use chasqui_server::infrastructure::websocket::chat_server::ChatServer;
 
 /// Main application entry point
 /// Initializes the following components:
@@ -32,13 +32,13 @@ async fn main() -> std::io::Result<()> {
 
     // Check for --list-api argument
     if std::env::args().any(|arg| arg == "--list-api") {
-        actix_crud::interfaces::api::api_doc::print_routes();
+        chasqui_server::interfaces::api::api_doc::print_routes();
         return Ok(());
     }
 
     // Check for --list-ws argument
     if std::env::args().any(|arg| arg == "--list-ws") {
-        actix_crud::interfaces::api::api_doc::print_ws_docs();
+        chasqui_server::interfaces::api::api_doc::print_ws_docs();
         return Ok(());
     }
 

@@ -3,13 +3,14 @@ name = "chasqui-server"
 version = "0.1.0"
 edition = "2021"
 
+[lib]
+name = "chasqui_server"
+path = "src/lib.rs"
+
 [[bin]]
 name = "chasqui-server"
 path = "src/main.rs"
 
-[lib]
-name = "actix_crud"
-path = "src/lib.rs"
 
 [dependencies]
 actix-web = "4.11.0"
