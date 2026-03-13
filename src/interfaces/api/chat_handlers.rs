@@ -92,9 +92,9 @@ pub async fn create_conversation(
 
     // Priority 1: target_wallet (shorthand for direct chat)
     if let Some(wallet) = &body.target_wallet {
-        participant_ids.push(wallet.clone());
+        participant_ids.push(wallet.to_lowercase());
     } else if let Some(ids) = &body.participant_ids {
-        participant_ids = ids.clone();
+        participant_ids = ids.into_iter().map(|id| id.to_lowercase()).collect();
     } else {
         return HttpResponse::BadRequest()
             .body("Either 'participant_ids' or 'target_wallet' must be provided");
@@ -226,7 +226,7 @@ pub async fn add_participant(
     let conv_id = Thing::from((parts[0], parts[1]));
 
     let identifier = match body.get("identifier").and_then(|v| v.as_str()) {
-        Some(id) => id,
+        Some(id) => id.to_lowercase(),
         None => {
             return HttpResponse::BadRequest()
                 .body("Missing 'identifier' field (wallet or user ID)")
@@ -237,10 +237,10 @@ pub async fn add_participant(
     let target_user_id = if identifier.contains(':') {
         let p: Vec<&str> = identifier.split(':').collect();
         Thing::from((p[0], p[1]))
-    } else if uuid::Uuid::parse_str(identifier).is_ok() {
-        Thing::from(("user", identifier))
+    } else if uuid::Uuid::parse_str(&identifier).is_ok() {
+        Thing::from(("user", identifier.as_str()))
     } else {
-        match db.find_user_by_wallet(identifier).await {
+        match db.find_user_by_wallet(&identifier).await {
             Some(user) => user.id.expect("User has no ID"),
             None => return HttpResponse::BadRequest().body("User with wallet not found"),
         }

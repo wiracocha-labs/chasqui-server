@@ -44,6 +44,16 @@ pub fn config(cfg: &mut web::ServiceConfig) {
                 "/login",
                 web::post().to(crate::interfaces::api::user_handlers::login),
             )
+            // GET endpoint to retrieve all users
+            .route(
+                "/users",
+                web::get().to(crate::interfaces::api::user_handlers::get_all_users),
+            )
+            // DELETE endpoint to remove users with wallets
+            .route(
+                "/users/wallets",
+                web::delete().to(crate::interfaces::api::user_handlers::delete_wallet_users),
+            )
             // WebSocket endpoint for chat
             .route(
                 "/ws/chat",

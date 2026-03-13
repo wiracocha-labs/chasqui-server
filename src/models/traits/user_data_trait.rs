@@ -54,6 +54,18 @@ pub trait UserDataTrait {
     /// # Returns
     /// * `Option<User>` - Some(user) if found, None if not found or error
     async fn find_user_by_wallet(&self, wallet: &str) -> Option<User>;
+
+    /// Retrieves all users from the database.
+    ///
+    /// # Returns
+    /// * `Vec<User>` - A list of all users, or an empty list on error
+    async fn get_all_users(&self) -> Vec<User>;
+
+    /// Deletes all users that have a wallet associated.
+    ///
+    /// # Returns
+    /// * `bool` - true on success, false on error
+    async fn delete_wallet_users(&self) -> bool;
 }
 
 // Implementation of UserDataTrait for the Database struct
@@ -179,6 +191,46 @@ impl UserDataTrait for Database {
             Err(e) => {
                 error!("DB find_user_by_wallet query error: {:?}", e);
                 None
+            }
+        }
+    }
+
+    // Retrieve all users
+    async fn get_all_users(&self) -> Vec<User> {
+        debug!("DB get_all_users");
+        let result = self.client.query("SELECT * FROM user").await;
+
+        match result {
+            Ok(mut response) => match response.take::<Vec<User>>(0) {
+                Ok(users) => {
+                    debug!("DB get_all_users: found {} users", users.len());
+                    users
+                }
+                Err(e) => {
+                    error!("DB get_all_users deserialization error: {:?}", e);
+                    Vec::new()
+                }
+            },
+            Err(e) => {
+                error!("DB get_all_users query error: {:?}", e);
+                Vec::new()
+            }
+        }
+    }
+
+    // Delete all users with wallets
+    async fn delete_wallet_users(&self) -> bool {
+        debug!("DB delete_wallet_users");
+        let result = self.client.query("DELETE user WHERE wallet != NONE").await;
+
+        match result {
+            Ok(_) => {
+                debug!("DB delete_wallet_users: success");
+                true
+            }
+            Err(e) => {
+                error!("DB delete_wallet_users query error: {:?}", e);
+                false
             }
         }
     }

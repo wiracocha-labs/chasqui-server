@@ -12,7 +12,7 @@ pub fn print_routes() {
         "/api/tasks",
         "Retrieve all tasks",
         None,
-        Some(r#"{"id": "uuid", "task_name": "string", "completed": bool}"#),
+        Some(r#"[{"uuid": "string", "task_name": "string"}]"#),
     );
 
     print_endpoint(
@@ -20,22 +20,24 @@ pub fn print_routes() {
         "/api/tasks",
         "Create a new task",
         Some(r#"{"task_name": "string"}"#),
-        Some(r#"{"id": "uuid", "task_name": "string", "completed": false}"#),
+        Some(r#"{"uuid": "string", "task_name": "string"}"#),
     );
 
     print_endpoint(
         "PATCH",
         "/api/tasks/{uuid}",
-        "Toggle task completion status",
+        "Update task status",
         None,
-        Some(r#"{"id": "uuid", "task_name": "string", "completed": bool}"#),
+        Some(r#"{"uuid": "string", "task_name": "string"}"#),
     );
 
     print_endpoint(
         "POST",
         "/api/register",
         "Register a new user",
-        Some(r#"{"username": "Alice", "email": "alice@example.com", "password": "..."}"#),
+        Some(
+            r#"{"username": "Alice", "email": "alice@example.com", "password": "..."} OR {"wallet": "0x..."}"#,
+        ),
         Some(r#"{"create": "success", "message": "User created successfully"}"#),
     );
 
@@ -43,16 +45,34 @@ pub fn print_routes() {
         "POST",
         "/api/login",
         "Authenticate and get JWT token",
-        Some(r#"{"email": "...", "password": "..."} OR {"username": "...", "password": "..."}"#),
+        Some(
+            r#"{"email": "...", "password": "..."} OR {"username": "...", "password": "..."} OR {"wallet": "0x..."}"#,
+        ),
         Some(r#"{"token": "<JWT_STRING>"}"#),
     );
 
     print_endpoint(
         "GET",
+        "/api/users",
+        "Retrieve all users",
+        None,
+        Some(r#"[{"username": "...", "email": "...", "wallet": "0x..."}]"#),
+    );
+
+    print_endpoint(
+        "DELETE",
+        "/api/users/wallets",
+        "Delete all users with wallets",
+        None,
+        Some(r#"{"create": "success", "message": "..."}"#),
+    );
+
+    print_endpoint(
+        "GET",
         "/api/ws/chat",
-        "WebSocket chat connection (requires token)",
+        "WebSocket chat connection (requires token in query)",
         None,
-        None,
+        Some(r#"ws://localhost:8080/api/ws/chat?token=<JWT>"#),
     );
 
     print_endpoint(
@@ -60,9 +80,11 @@ pub fn print_routes() {
         "/api/conversations",
         "Create a new conversation",
         Some(
-            r#"{"participant_ids": ["uuid"], "conversation_type": "Direct"|"Group", "name": "..."}"#,
+            r#"{"target_wallet": "0x...", "conversation_type": "Direct"} OR {"participant_ids": ["uuid"], "conversation_type": "Group", "name": "..."}"#,
         ),
-        Some(r#"{"id": "conv:...", "name": "...", ...}"#),
+        Some(
+            r#"{"id": "conversation:uuid", "conversation_type": "Direct|Group", "participants": ["user:uuid"]}"#,
+        ),
     );
 
     print_endpoint(
@@ -70,7 +92,9 @@ pub fn print_routes() {
         "/api/conversations",
         "List user conversations",
         None,
-        Some(r#"[{"id": "conv:...", "name": "...", ...}]"#),
+        Some(
+            r#"[{"id": "conversation:uuid", "conversation_type": "Direct|Group", "participants": ["user:uuid"]}]"#,
+        ),
     );
 
     print_endpoint(
@@ -78,10 +102,25 @@ pub fn print_routes() {
         "/api/conversations/{id}/messages",
         "Get message history (query: limit, offset)",
         None,
-        Some(r#"[{"id": "msg:...", "content": "...", ...}]"#),
+        Some(
+            r#"[{"id": "msg:uuid", "content": "...", "sender_id": "user:uuid", "conversation_id": "conversation:uuid", "created_at": "..."}]"#,
+        ),
     );
 
-    println!("\n💡 Tip: Use Bearer token in 'Authorization' header for protected routes.\n");
+    print_endpoint(
+        "POST",
+        "/api/conversations/{id}/participants",
+        "Add participant to conversation",
+        Some(r#"{"identifier": "0x... or user:uuid"}"#),
+        Some(r#"{"status": "success"}"#),
+    );
+
+    println!("\n💡 Tips:");
+    println!("- Use Bearer token in 'Authorization' header for protected routes");
+    println!("- Conversation IDs format: 'conversation:uuid'");
+    println!("- User IDs format: 'user:uuid'");
+    println!("- Message IDs format: 'msg:uuid'");
+    println!("- Wallet authentication supported (no password required)\n");
 }
 
 /// Prints documentation for WebSocket messages and events.
@@ -96,13 +135,13 @@ pub fn print_ws_docs() {
     print_ws_message(
         "join",
         "Join a conversation room to receive messages",
-        r#"{"type": "join", "conversation_id": "conv:..."}"#,
+        r#"{"type": "join", "conversation_id": "conversation:uuid"}"#,
     );
 
     print_ws_message(
         "message",
         "Send a new message to a conversation",
-        r#"{"type": "message", "conversation_id": "conv:...", "content": "Hello!"}"#,
+        r#"{"type": "message", "conversation_id": "conversation:uuid", "content": "Hello!"}"#,
     );
 
     println!("\n--- SERVER -> CLIENT MESSAGES ---");
@@ -111,7 +150,7 @@ pub fn print_ws_docs() {
     print_ws_message(
         "NewMessage",
         "Broadcast when a new message is saved",
-        r#"{"type": "NewMessage", "message": {"id": "msg:...", "content": "...", ...}}"#,
+        r#"{"type": "NewMessage", "message": {"id": "msg:uuid", "content": "...", "sender_id": "user:uuid", "created_at": "..."}}"#,
     );
 
     print_ws_message(

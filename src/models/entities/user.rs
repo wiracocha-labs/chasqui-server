@@ -75,6 +75,7 @@ impl User {
     /// Creates a new User from a wallet address for demo purposes.
     /// Generates a unique username and defaults the password to None.
     pub fn new_from_wallet(wallet: String) -> Self {
+        let wallet = wallet.to_lowercase();
         debug!("User::new_from_wallet creating user with wallet={}", wallet);
         let uuid = Uuid::new_v4().to_string();
         // Generar un username automático basado en la wallet (primeros 6 caracteres para legibilidad)

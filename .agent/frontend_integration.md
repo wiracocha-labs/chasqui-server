@@ -84,7 +84,7 @@ POST /api/login
   {"type": "Error", "message": "Reason for failure"}
   ```
 
-## �️ API Introspection
+## 🔗 API Introspection
 If you have access to the server codebase, you can run the following commands to see the full list of endpoints and schemas:
 
 ```bash
@@ -92,75 +92,78 @@ cargo run -- --list-api
 cargo run -- --list-ws
 ```
 
-## �📋 Available REST Endpoints
-- `GET /tasks`: List all tasks.
-- `POST /tasks`: Create a new task.
-- `PATCH /tasks/{uuid}`: Update completion status.
-- `GET /conversations`: List user's conversations.
-- `POST /conversations`: Create a new chat.
-  - **Shorthand (Direct):** `{"target_wallet": "0x...", "conversation_type": "Direct"}` (Auto-includes you).
-  - **Manual (Group/Direct):** `{"participant_ids": ["uuid", "wallet"], "conversation_type": "Direct|Group"}`.
-- `GET /conversations/{id}/messages`: Retrieve chat history.
-- `POST /conversations/{id}/participants`: Add participant by wallet or ID.
-  - **Payload:** `{"identifier": "0x... atau tb:id"}`
+## 📋 Available REST Endpoints
 
+### Tasks Management
+- `GET /api/tasks`: List all tasks.
+  - **Response:** `[{"uuid": "...", "task_name": "..."}]`
+- `POST /api/tasks`: Create a new task.
+  - **Payload:** `{"task_name": "Task description"}`
+  - **Response:** `{"uuid": "...", "task_name": "..."}`
+- `PATCH /api/tasks/{uuid}`: Update task completion status.
+  - **Response:** Updated task object
 
-////
+### Conversations & Chat
+- `GET /api/conversations`: List user's conversations.
+  - **Response:** Array of conversation objects with IDs in format `conversation:<uuid>`
+- `POST /api/conversations`: Create a new chat.
+  - **Direct Chat:** `{"target_wallet": "0x...", "conversation_type": "Direct"}`
+  - **Group Chat:** `{"participant_ids": ["uuid", "wallet"], "conversation_type": "Group", "name": "Group Name"}`
+  - **Note:** Creator is automatically included as participant
+- `GET /api/conversations/{id}/messages`: Retrieve chat history.
+  - **Query Params:** `?limit=50&offset=0`
+  - **ID Format:** `conversation:<uuid>`
+  - **Response:** Array of messages with pagination
+- `POST /api/conversations/{id}/participants`: Add participant by wallet or ID.
+  - **Payload:** `{"identifier": "0x... or user:uuid"}`
+  - **ID Format:** `conversation:<uuid>`
 
-para integracion posterior hacia las tareas
+## 🧠 Business Logic Details
 
-🛠️ Guía de Actualización del Backend (Rust)
-Para que el frontend pueda sincronizar correctamente las tareas de la Blockchain, el backend necesita ampliar su modelo de datos. Aquí tienes la estructura recomendada:
+### Authentication Flow
+1. **Traditional Registration**: Requires `username`, `email`, `password`
+   - Username validation: letters only
+   - Email validation: basic format check
+   - Password: hashed with bcrypt
+2. **Wallet Registration**: Only requires `wallet` address
+   - Auto-generates username: `wallet_0x1234_uuid`
+   - No password required
+3. **Login Methods**:
+   - Traditional: `email/username + password`
+   - Wallet: `wallet` only (creates user if missing)
+4. **JWT Token**: Contains `sub` (user ID), `username`, `roles`, `exp`, `iat`
 
-1. Modelo de Datos Extendido (
-Task
-)
-Para una integración completa, el backend debería reflejar los datos que la Blockchain ya maneja.
+### Task Management
+- **Current Model**: Simple structure with `uuid` and `task_name` only
+- **Creation**: Auto-generates UUID, validates task_name presence
+- **Updates**: Currently supports status changes via PATCH
+- **Note**: Blockchain integration fields mentioned in planning are not yet implemented
 
-rust
-pub struct Task {
-    pub uuid: String,            // UUID interno (ID del Chat)
-    pub escrow_id: u64,          // ID de la Blockchain
-    pub depositor: String,       // Wallet del cliente
-    pub beneficiary: String,     // Wallet del ejecutor
-    pub task_name: String,       // Descripción de la tarea
-    pub amount: f64,             // Monto (0 si es privado/encriptado)
-    pub time_value: u32,         // Cantidad de tiempo
-    pub time_unit: String,       // "hours" o "days"
-    pub is_private: bool,        // Si usa eERC20
-    pub status: String,          // "Pending", "Completed", "Released", "Cancelled"
-}
-2. Endpoints Requeridos para Sincronización
-POST /tasks (Vincular Tareas y Crear Chat)
-Payload que enviará el frontend (alineado con los TODOs de 
-useTaskManager.ts
-):
+### Chat System
+- **Conversation Types**: `Direct` (2 participants) or `Group` (2+ participants)
+- **ID Formats**: 
+  - Conversations: `conversation:<uuid>`
+  - Users: `user:<uuid>`
+  - Messages: `msg:<uuid>`
+- **Participant Resolution**: Supports wallet addresses, UUIDs, or Thing format
+- **WebSocket Events**: Real-time messaging with JSON protocol
 
-json
-{
-  "escrow_id": 17,
-  "depositor": "0x...",
-  "beneficiary": "0x...",
-  "task_name": "Prueba del usuario 2",
-  "amount": 0.06,
-  "time_value": 1,
-  "time_unit": "days",
-  "is_private": false,
-  "status": "Pending"
-}
-PATCH /tasks/{uuid} (Actualizar Estado)
-Para que el backend sepa que la blockchain cambió de estado:
+## 🔧 Implementation Notes
 
-json
-{
-  "status": "Completed" // "Released" o "Cancelled"
-}
-3. Estrategia de Fuente de Verdad
-Blockchain: Es el juez final para el dinero y el estado del Escrow.
-Backend: Almacena los metadatos y actúa como el "pegamento" para vincular Tareas con Chats.
-Frontend: Combina ambos. Actualmente "enriquece" la UI leyendo directamente del contrato, pero necesita que el backend guarde el escrow_id para saber qué chat corresponde a cada tarea.
-Nota: Mientras actualizas el backend, el frontend seguirá funcionando usando la información que "recupera" directamente de la Blockchain (Smart Contract), pero los nombres de las tareas podrían aparecer como #ID hasta que el backend proporcione los nombres reales.
+### Error Handling
+- **400 Bad Request**: Validation errors, missing fields
+- **401 Unauthorized**: Invalid credentials, missing token
+- **404 Not Found**: Resource not found
+- **500 Internal Server Error**: Database or system errors
 
+### Database Schema
+- **Users**: Stores traditional and wallet-based users
+- **Conversations**: Links participants with conversation metadata
+- **Messages**: Stores chat history with timestamps
+- **Tasks**: Simple task tracking (currently minimal)
 
-Comment
-⌥⌘M
+### Security Features
+- JWT-based authentication
+- Password hashing with bcrypt
+- Token validation for all protected endpoints
+- WebSocket authentication via query parameter

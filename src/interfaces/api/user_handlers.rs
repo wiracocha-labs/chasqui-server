@@ -80,6 +80,14 @@ struct RegistrationResponse {
     message: String,
 }
 
+/// Response payload for a safe user representation
+#[derive(Serialize)]
+pub struct SafeUserResponse {
+    pub username: String,
+    pub email: Option<String>,
+    pub wallet: Option<String>,
+}
+
 /// Handles user registration requests
 ///
 /// # Arguments
@@ -104,6 +112,8 @@ pub async fn register(
         if wallet_addr.trim().is_empty() {
             return HttpResponse::BadRequest().body("Wallet address cannot be empty");
         }
+        
+        let wallet_addr = wallet_addr.to_lowercase();
 
         info!("Processing wallet registration for: {}", wallet_addr);
         let user = User::new_from_wallet(wallet_addr.clone());
@@ -204,10 +214,11 @@ pub async fn login(user_data: web::Json<LoginRequest>, db: web::Data<Database>) 
 
     // Wallet-only flow: if wallet provided and no email/username/password, authenticate by wallet
     if let Some(w) = wallet {
+        let w = w.to_lowercase();
         debug!("Wallet login attempt for: {}", w);
 
         // Try to find existing user by wallet
-        let mut user = <Database as UserDataTrait>::find_user_by_wallet(&db, w).await;
+        let mut user = <Database as UserDataTrait>::find_user_by_wallet(&db, &w).await;
 
         // If not found, create a new user from wallet (demo flow)
         if user.is_none() {
@@ -355,4 +366,44 @@ pub async fn login(user_data: web::Json<LoginRequest>, db: web::Data<Database>) 
     };
 
     HttpResponse::Ok().json(AuthResponse { token })
+}
+
+/// Handles request to get all users
+///
+/// # Returns
+/// - 200 OK with a list of users (excluding sensitive data)
+pub async fn get_all_users(db: web::Data<Database>) -> impl Responder {
+    let users = <Database as UserDataTrait>::get_all_users(&db).await;
+
+    let safe_users: Vec<SafeUserResponse> = users
+        .into_iter()
+        .map(|u| SafeUserResponse {
+            username: u.username,
+            email: u.email,
+            wallet: u.wallet,
+        })
+        .collect();
+
+    HttpResponse::Ok().json(safe_users)
+}
+
+/// Handles request to delete all users with wallets
+///
+/// # Returns
+/// - 200 OK on success
+/// - 500 Internal Server Error on failure
+pub async fn delete_wallet_users(db: web::Data<Database>) -> impl Responder {
+    info!("Attempting to delete all users with wallets");
+    let success = <Database as UserDataTrait>::delete_wallet_users(&db).await;
+
+    if success {
+        info!("Successfully deleted wallet users");
+        HttpResponse::Ok().json(RegistrationResponse {
+            create: "success".to_string(),
+            message: "Wallet users deleted successfully".to_string(),
+        })
+    } else {
+        error!("Failed to delete wallet users");
+        HttpResponse::InternalServerError().body("Failed to delete wallet users")
+    }
 }
