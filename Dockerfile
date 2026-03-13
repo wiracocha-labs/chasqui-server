@@ -1,7 +1,7 @@
 # 🐳 Dockerfile for Chasqui Server
 
 # Stage 1: Build
-FROM rust:1.75-slim-bookworm AS builder
+FROM rust:1.84-slim-bookworm AS builder
 
 # Create a new empty shell project
 RUN USER=root cargo new --bin chasqui-server
