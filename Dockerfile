@@ -30,7 +30,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the build artifact from the builder stage
-COPY --from=builder /actix-crud/target/release/actix-crud /usr/local/bin/chasqui-server
+COPY --from=builder /actix-crud/target/release/chasqui-server /usr/local/bin/chasqui-server
 
 # Set environment variables
 ENV SERVER_HOST=0.0.0.0
