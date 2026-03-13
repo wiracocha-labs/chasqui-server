@@ -4,8 +4,8 @@
 FROM rust:1.75-slim-bookworm AS builder
 
 # Create a new empty shell project
-RUN USER=root cargo new --bin actix-crud
-WORKDIR /actix-crud
+RUN USER=root cargo new --bin chasqui-server
+WORKDIR /chasqui-server
 
 # Copy our manifests
 COPY ./Cargo.lock ./Cargo.lock
@@ -30,7 +30,7 @@ FROM debian:bookworm-slim
 RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/lib/apt/lists/*
 
 # Copy the build artifact from the builder stage
-COPY --from=builder /actix-crud/target/release/chasqui-server /usr/local/bin/chasqui-server
+COPY --from=builder /chasqui-server/target/release/chasqui-server /usr/local/bin/chasqui-server
 
 # Set environment variables
 ENV SERVER_HOST=0.0.0.0
