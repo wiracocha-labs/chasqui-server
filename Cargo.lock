@@ -70,42 +70,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "actix-crud"
-version = "0.1.0"
-dependencies = [
- "actix",
- "actix-cors",
- "actix-files",
- "actix-multipart",
- "actix-rt",
- "actix-web",
- "actix-web-actors",
- "async-trait",
- "awc",
- "bcrypt 0.13.0",
- "chrono",
- "derive_more 0.99.20",
- "dotenv",
- "dotenvy",
- "env_logger",
- "futures",
- "json",
- "jsonwebtoken 8.3.0",
- "log",
- "mime",
- "mockall",
- "rand 0.8.5",
- "serde",
- "serde_json",
- "surrealdb",
- "tempfile",
- "thiserror 2.0.17",
- "tokio",
- "uuid",
- "validator",
-]
-
-[[package]]
 name = "actix-files"
 version = "0.6.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1094,6 +1058,42 @@ name = "cfg_aliases"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
+
+[[package]]
+name = "chasqui-server"
+version = "0.1.0"
+dependencies = [
+ "actix",
+ "actix-cors",
+ "actix-files",
+ "actix-multipart",
+ "actix-rt",
+ "actix-web",
+ "actix-web-actors",
+ "async-trait",
+ "awc",
+ "bcrypt 0.13.0",
+ "chrono",
+ "derive_more 0.99.20",
+ "dotenv",
+ "dotenvy",
+ "env_logger",
+ "futures",
+ "json",
+ "jsonwebtoken 8.3.0",
+ "log",
+ "mime",
+ "mockall",
+ "rand 0.8.5",
+ "serde",
+ "serde_json",
+ "surrealdb",
+ "tempfile",
+ "thiserror 2.0.17",
+ "tokio",
+ "uuid",
+ "validator",
+]
 
 [[package]]
 name = "chrono"

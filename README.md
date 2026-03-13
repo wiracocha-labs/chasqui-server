@@ -10,8 +10,9 @@ Chasqui Server is a state-of-the-art backend framework designed for real-time co
 
 *   🚀 **High Performance:** Powered by Actix-web 4.x for blazing-fast request handling.
 *   💬 **Real-Time Messaging:** Native WebSocket integration for instant communication.
-*   🔐 **Secure by Design:** JWT Authentication with robust Bcrypt password hashing.
+*   🔐 **Secure & Web3 Ready:** JWT Authentication and **Wallet-based Auth** for modern decentralized integration.
 *   🗃️ **Surreal Database:** Seamless integration with SurrealDB for flexible, ACID-compliant storage.
+*   🏗️ **Hybrid Architecture:** Combining REST APIs with real-time WebSocket events for an optimal, hybrid sync approach.
 *   📝 **Proactive Observability:** Structured logging and comprehensive error handling.
 *   🛡️ **Type-Safe Validation:** Full data integrity using the `validator` crate.
 
@@ -25,6 +26,9 @@ src/
 ├── infrastructure/ # Database & WebSocket implementations
 ├── interfaces/    # API Controllers & Handlers
 ├── models/        # Entities & Data structures
+├── config/        # Environment configurations
+├── error/         # Application error handling
+├── lib.rs         # Local library definition
 └── main.rs        # Application Entry Point
 ```
 
@@ -56,7 +60,7 @@ cargo run
 Chasqui Server includes built-in documentation for its API and WebSockets:
 
 ```bash
-# List all REST API endpoints and JSON schemas
+# List all REST API endpoints and JSON schemas (includes Wallet Auth and Wallet user routes)
 cargo run -- --list-api
 
 # List all WebSocket message types and structures
@@ -69,15 +73,17 @@ cargo run -- --list-ws
 
 | Module | Status | Next Milestone |
 | :--- | :---: | :--- |
-| **Auth System** | ✅ Stable | Refresh Tokens |
+| **Auth System** | ✅ Stable | Wallet integration & Refresh Tokens |
 | **Real-Time Chat** | ✅ 1.0 | Presence & Typing indicators |
 | **Data Persistence**| ✅ Stable | Migrations & Seeds |
 | **User Roles** | 🚧 Beta | Dynamic RBAC |
 
 ### 🗺️ What's Next?
-*   **Hybrid Sync:** Automated message synchronization on reconnection.
 *   **Media Support:** Phased rollout for image and attachment management.
 *   **Scalability:** Implementation of distributed actors for horizontal growth.
+*   **Task Notifications:** Sending automatic, contextual notifications to the task's corresponding chat.
+*   **GitHub Webhook:** Integration for remote task updates from code pushes.
+*   **LLM Integration:** Basic AI summaries of tasks and conversations via LLM.
 
 ---
 
